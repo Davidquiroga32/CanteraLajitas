@@ -180,7 +180,8 @@ Otras reglas: abonos y anticipos se reciben solo en efectivo o transferencia.
 - **Materiales**: tarjetas con precio y barra de stock; admin crea productos, edita precio y ajusta stock (con auditoría).
 - **Compradores**: listado con búsqueda, crear/editar (CC o NIT, sin teléfono obligatorio), drawer con historial de remisiones, deuda y saldo de anticipo; botón "Vender a este comprador".
 
-### Fase 4 — Nueva remisión (núcleo)
+### Fase 4 — Nueva remisión (núcleo)  ✅
+> Hecho: `RemisionController` (crear, emitir, ver, imprimir, PDF, búsqueda de compradores), `EmitirRemisionRequest` con mensajes claros, `RemisionPolicy` (vendedor solo las suyas), formulario Alpine (`resources/js/remision.js`) con 4 pasos, vista previa en vivo, aviso grande de lo que falta y barra de total fija; documento con encabezado legal, casillas de las 5 formas de pago y firmas; impresión y PDF (`barryvdh/laravel-dompdf`) en tamaño carta, **una copia por hoja** (copia vendedor + 2 copias cliente).
 - Paso 1 comprador: búsqueda con autocompletado (nombre o documento); si existe, se autorrellenan sus datos; si no, se crea al emitir.
 - Paso 2 materiales: varias líneas (material, cantidad m³, precio de catálogo, subtotal).
 - Paso 3 despacho y pago: conductor, placa, máquina que carga, destino (botón rápido "N/A"), forma de pago (5 opciones grandes). Con *Anticipo* se muestra el saldo disponible; con *Crédito*, la deuda actual.

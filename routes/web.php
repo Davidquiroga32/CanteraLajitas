@@ -4,6 +4,7 @@ use App\Http\Controllers\CompradorController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MaterialController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RemisionController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function () {
@@ -13,8 +14,13 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
     // Módulos de las siguientes fases: por ahora muestran "en construcción".
-    Route::view('/remisiones/nueva', 'proximamente', ['modulo' => 'Nueva remisión', 'fase' => 4])->name('remisiones.create');
+    Route::get('/remisiones/nueva', [RemisionController::class, 'create'])->name('remisiones.create');
+    Route::post('/remisiones', [RemisionController::class, 'store'])->name('remisiones.store');
     Route::view('/remisiones', 'proximamente', ['modulo' => 'Remisiones', 'fase' => 5])->name('remisiones.index');
+    Route::get('/remisiones/{remision}', [RemisionController::class, 'show'])->whereNumber('remision')->name('remisiones.show');
+    Route::get('/remisiones/{remision}/imprimir', [RemisionController::class, 'imprimir'])->whereNumber('remision')->name('remisiones.imprimir');
+    Route::get('/remisiones/{remision}/pdf', [RemisionController::class, 'pdf'])->whereNumber('remision')->name('remisiones.pdf');
+    Route::get('/compradores/buscar', [RemisionController::class, 'buscarCompradores'])->name('compradores.buscar');
     Route::get('/compradores', [CompradorController::class, 'index'])->name('compradores.index');
     Route::post('/compradores', [CompradorController::class, 'store'])->name('compradores.store');
     Route::get('/materiales', [MaterialController::class, 'index'])->name('materiales.index');

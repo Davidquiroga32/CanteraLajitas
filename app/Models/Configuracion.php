@@ -38,6 +38,16 @@ class Configuracion extends Model
         return static::query()->where('clave', $clave)->value('valor') ?? (self::DEFAULTS[$clave] ?? null);
     }
 
+    /**
+     * Todos los valores (los guardados reemplazan a los de por defecto).
+     *
+     * @return array<string, string|null>
+     */
+    public static function todas(): array
+    {
+        return [...self::DEFAULTS, ...static::query()->pluck('valor', 'clave')->all()];
+    }
+
     public static function guardar(string $clave, ?string $valor): void
     {
         static::query()->updateOrCreate(['clave' => $clave], ['valor' => $valor]);
