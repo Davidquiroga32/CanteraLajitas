@@ -175,7 +175,8 @@ Otras reglas: abonos y anticipos se reciben solo en efectivo o transferencia.
 
 **Entregable:** login y panel con la identidad real de la empresa.
 
-### Fase 3 — Materiales (inventario) y compradores
+### Fase 3 — Materiales (inventario) y compradores  ✅
+> Hecho: `MaterialController` (catálogo, crear/editar y ajuste de stock por entrada o conteo físico, solo admin, con auditoría) y `CompradorController` (búsqueda, crear para todos, editar solo admin, panel lateral con historial, deuda y anticipo vía `?ver=`). El vendedor ve en el historial solo sus remisiones. Ciudad y documento obligatorios; documento único.
 - **Materiales**: tarjetas con precio y barra de stock; admin crea productos, edita precio y ajusta stock (con auditoría).
 - **Compradores**: listado con búsqueda, crear/editar (CC o NIT, sin teléfono obligatorio), drawer con historial de remisiones, deuda y saldo de anticipo; botón "Vender a este comprador".
 

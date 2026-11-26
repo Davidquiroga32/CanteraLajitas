@@ -57,7 +57,7 @@
             <x-kpi etiqueta="Anticipos disponibles" :valor="Formato::dinero($admin['anticipos'])" color="var(--ok)">
                 Saldo a favor de los compradores
             </x-kpi>
-            <section class="card col-span-1 md:col-span-2" style="grid-column: span 2">
+            <section class="card col-ancha">
                 <div class="pd">
                     <div class="l mb-2 text-[13px]" style="color: var(--muted)">Stock bajo en patio</div>
                     @forelse ($admin['stock_bajo'] as $material)
@@ -112,18 +112,18 @@
                 <a class="btn sm" href="{{ route('remisiones.index') }}">Ver todas</a>
             </div>
             <div class="tw">
-                <table class="t">
+                <table class="t t-movil">
                     <thead>
                         <tr><th>Remisión</th><th>Comprador</th><th>Fecha</th><th>Pago</th><th class="num">Total</th></tr>
                     </thead>
                     <tbody>
                         @forelse ($resumen['ultimas'] as $remision)
                             <tr>
-                                <td class="mono">{{ $remision->numeroFormateado() }}</td>
-                                <td>{{ $remision->comprador->nombre }}</td>
-                                <td class="whitespace-nowrap">{{ Formato::fechaCorta($remision->emitida_en) }} · {{ $remision->emitida_en->format('H:i') }}</td>
-                                <td><x-tag-pago :forma="$remision->forma_pago" /></td>
-                                <td class="num">{{ Formato::dinero($remision->total) }}</td>
+                                <td class="mono" data-label="Remisión">{{ $remision->numeroFormateado() }}</td>
+                                <td class="principal">{{ $remision->comprador->nombre }}</td>
+                                <td class="whitespace-nowrap" data-label="Fecha">{{ Formato::fechaCorta($remision->emitida_en) }} · {{ $remision->emitida_en->format('H:i') }}</td>
+                                <td data-label="Pago"><x-tag-pago :forma="$remision->forma_pago" /></td>
+                                <td class="num" data-label="Total"><b>{{ Formato::dinero($remision->total) }}</b></td>
                             </tr>
                         @empty
                             <tr><td colspan="5" class="empty">Aún no hay remisiones.</td></tr>

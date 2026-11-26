@@ -15,9 +15,10 @@
     <body x-data="{ menuAbierto: false }">
         <div class="mtop noprint">
             <img src="{{ asset('images/logo-cantera-lajitas.png') }}" alt="Cantera Lajitas S.A.S." width="54" height="51">
-            <button type="button" class="btn sm" @click="menuAbierto = ! menuAbierto" :aria-expanded="menuAbierto" aria-label="Abrir menú">
-                <x-icono nombre="menu" class="w-5 h-5" />
-                Menú
+            <button type="button" class="btn sm" @click="menuAbierto = ! menuAbierto" :aria-expanded="menuAbierto" :aria-label="menuAbierto ? 'Cerrar menú' : 'Abrir menú'">
+                <x-icono nombre="menu" class="w-5 h-5" x-show="! menuAbierto" />
+                <x-icono nombre="cerrar" class="w-5 h-5" x-show="menuAbierto" x-cloak />
+                <span x-text="menuAbierto ? 'Cerrar' : 'Menú'">Menú</span>
             </button>
         </div>
 
