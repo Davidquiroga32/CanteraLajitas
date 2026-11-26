@@ -5,25 +5,28 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'Laravel') }}</title>
+        <title>{{ config('app.name', 'Cantera Lajitas') }}</title>
+        <link rel="icon" type="image/png" href="{{ asset('images/favicon-64.png') }}">
 
-        <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+        @include('layouts.partials.fuentes')
 
-        <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans text-gray-900 antialiased">
-        <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100">
-            <div>
-                <a href="/">
-                    <x-application-logo class="w-20 h-20 fill-current text-gray-500" />
-                </a>
-            </div>
+    <body>
+        <div class="lg">
+            <div class="box">
+                <section class="l">
+                    <div>
+                        <x-application-logo class="h-auto w-40" width="160" height="150" />
+                        <h1>Cada metro cúbico, <em>remisionado y a la vista.</em></h1>
+                        <p>Registra la venta, imprime la remisión al instante y consulta cuánto se vendió en cualquier rango de fechas.</p>
+                    </div>
+                    <div class="pie mono text-xs">Cantera Lajitas S.A.S.</div>
+                </section>
 
-            <div class="w-full sm:max-w-md mt-6 px-6 py-4 bg-white shadow-md overflow-hidden sm:rounded-lg">
-                {{ $slot }}
+                <div class="r">
+                    {{ $slot }}
+                </div>
             </div>
         </div>
     </body>

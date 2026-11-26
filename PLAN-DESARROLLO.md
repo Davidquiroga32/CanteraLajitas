@@ -163,7 +163,8 @@ Cada fase termina con: código en el repo, migraciones/seeders corriendo, prueba
 
 Otras reglas: abonos y anticipos se reciben solo en efectivo o transferencia.
 
-### Fase 2 — Layout, autenticación y dashboard
+### Fase 2 — Layout, autenticación y dashboard  ✅
+> Hecho: paleta del logo en Tailwind, estilos del boceto en `resources/css/app.css`, logo en variantes clara/oscura + favicon (`public/images`), layout con barra lateral y menú móvil, componentes (`x-encabezado`, `x-kpi`, `x-icono`, `x-tag-pago`, `x-grafico-lineas`, `x-alerta-grande`, `x-panel-lateral`), login y perfil en español, registro público y auto-borrado de cuenta eliminados, bloqueo de usuarios inactivos (también con sesión abierta), `Gate` `admin`, mensajes de validación en español (`lang/es`), dashboard con `DashboardService`. Módulos de fases siguientes muestran "en construcción".
 - Configurar Tailwind con la paleta del logo y las 3 tipografías; pasar los estilos del boceto a `resources/css/app.css` como componentes.
 - Logo en `public/images/` (barra lateral, login, remisión, favicon).
 - Layout Blade `layouts/app.blade.php` con barra lateral (CTA "Nueva remisión", menú según rol, usuario y cerrar sesión) y componentes Blade: `card`, `kpi`, `btn`, `field`, `tag`, `modal`, `drawer`, `toast`, `alerta-grande`.

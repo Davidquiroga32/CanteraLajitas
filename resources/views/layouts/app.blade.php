@@ -5,32 +5,36 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'Laravel') }}</title>
+        <title>{{ isset($titulo) ? $titulo.' · ' : '' }}{{ config('app.name', 'Cantera Lajitas') }}</title>
+        <link rel="icon" type="image/png" href="{{ asset('images/favicon-64.png') }}">
 
-        <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+        @include('layouts.partials.fuentes')
 
-        <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans antialiased">
-        <div class="min-h-screen bg-gray-100">
-            @include('layouts.navigation')
-
-            <!-- Page Heading -->
-            @isset($header)
-                <header class="bg-white shadow">
-                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                        {{ $header }}
-                    </div>
-                </header>
-            @endisset
-
-            <!-- Page Content -->
-            <main>
-                {{ $slot }}
-            </main>
+    <body x-data="{ menuAbierto: false }">
+        <div class="mtop noprint">
+            <img src="{{ asset('images/logo-cantera-lajitas.png') }}" alt="Cantera Lajitas S.A.S." width="54" height="51">
+            <button type="button" class="btn sm" @click="menuAbierto = ! menuAbierto" :aria-expanded="menuAbierto" aria-label="Abrir menú">
+                <x-icono nombre="menu" class="w-5 h-5" />
+                Menú
+            </button>
         </div>
+
+        <div class="app">
+            @include('layouts.sidebar')
+
+            <div class="ct">
+                <main class="pg">
+                    {{ $slot }}
+                </main>
+            </div>
+        </div>
+
+        @if (session('ok'))
+            <div class="toast noprint" role="status" x-data="{ visible: true }" x-show="visible" x-init="setTimeout(() => visible = false, 3500)" x-transition>
+                {{ session('ok') }}
+            </div>
+        @endif
     </body>
 </html>

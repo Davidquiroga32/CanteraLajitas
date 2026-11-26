@@ -1,29 +1,35 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Profile') }}
-        </h2>
-    </x-slot>
+    <x-slot name="titulo">Mi perfil</x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    @include('profile.partials.update-profile-information-form')
-                </div>
-            </div>
+    <x-encabezado ceja="Cuenta" subtitulo="Tus datos de acceso. El rol, la cédula y el cargo los asigna el administrador.">
+        Mi <em>perfil</em>
+    </x-encabezado>
 
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    @include('profile.partials.update-password-form')
+    <div class="grid max-w-3xl gap-6">
+        <section class="card">
+            <div class="pd">
+                <div class="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    <div>
+                        <div class="lbl">Rol</div>
+                        <div><span @class(['tag', 'o' => $user->isAdmin()])>{{ $user->role->label() }}</span></div>
+                    </div>
+                    <div>
+                        <div class="lbl">Cédula</div>
+                        <div class="mono">{{ $user->cedula ?? '—' }}</div>
+                    </div>
+                    <div>
+                        <div class="lbl">Cargo</div>
+                        <div>{{ $user->cargo ?? '—' }}</div>
+                    </div>
                 </div>
+                @include('profile.partials.update-profile-information-form')
             </div>
+        </section>
 
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    @include('profile.partials.delete-user-form')
-                </div>
+        <section class="card">
+            <div class="pd">
+                @include('profile.partials.update-password-form')
             </div>
-        </div>
+        </section>
     </div>
 </x-app-layout>
