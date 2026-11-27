@@ -1,0 +1,1 @@
+@include('errors.plantilla', ['codigo' => 403, 'titulo' => 'No tienes permiso para ver esto', 'mensaje' => 'Esta parte del sistema es solo para el administrador. Si crees que deberías poder entrar, habla con él.'])

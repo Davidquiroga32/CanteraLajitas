@@ -1,0 +1,1 @@
+@include('errors.plantilla', ['codigo' => 500, 'titulo' => 'Algo salió mal', 'mensaje' => 'El sistema tuvo un problema y no pudo terminar. No es culpa tuya. Intenta de nuevo en un momento y, si se repite, avísale al administrador.', 'volver' => true])

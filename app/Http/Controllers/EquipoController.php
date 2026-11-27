@@ -9,7 +9,6 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class EquipoController extends Controller
@@ -60,6 +59,10 @@ class EquipoController extends Controller
         $cambios = collect($usuario->getDirty())->map(fn ($nuevo, $campo) => ['antes' => $usuario->getOriginal($campo), 'despues' => $nuevo]);
         $usuario->save();
 
+        if ($cambios->has('activo') && ! $usuario->activo) {
+            $usuario->cerrarSesiones();
+        }
+
         if ($cambios->isNotEmpty()) {
             Auditoria::registrar('usuario.editado', $usuario, $cambios->map(fn (array $cambio) => array_map(fn ($valor) => $valor instanceof \BackedEnum ? $valor->value : $valor, $cambio))->all());
         }
@@ -77,10 +80,8 @@ class EquipoController extends Controller
      */
     public function asignarContrasena(AsignarContrasenaRequest $request, User $usuario): RedirectResponse
     {
-        $usuario->forceFill([
-            'password' => $request->validated('password'),
-            'remember_token' => Str::random(60),
-        ])->save();
+        $usuario->forceFill(['password' => $request->validated('password')])->save();
+        $usuario->cerrarSesiones($usuario->is($request->user()) ? $request->session()->getId() : null);
 
         Auditoria::registrar('usuario.contrasena', $usuario);
 

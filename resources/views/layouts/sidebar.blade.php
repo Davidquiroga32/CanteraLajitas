@@ -7,6 +7,7 @@
         ['cartera.index', 'cartera.*', 'Cartera', 'cartera', true],
         ['equipo.index', 'equipo.*', 'Equipo y vendedores', 'carnet', true],
         ['reportes.index', 'reportes.*', 'Reportes', 'grafico', true],
+        ['auditoria.index', 'auditoria.*', 'Auditoría', 'escudo', true],
     ];
     $usuario = auth()->user();
 @endphp

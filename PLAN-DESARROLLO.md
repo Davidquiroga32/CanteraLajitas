@@ -208,6 +208,7 @@ Otras reglas: abonos y anticipos se reciben solo en efectivo o transferencia.
 - Exportación a Excel y PDF de cada reporte.
 
 ### Fase 8 — Seguridad, auditoría y pruebas
+> Hecho: auditoría de ingresos, salidas, intentos fallidos, bloqueos, contraseña propia y descargas (`AuditarSesiones`, middleware `RegistrarDescarga`); página de Auditoría (solo admin) con frases en español (`TextoAuditoria`), filtros y Excel. Límite de ingreso también por equipo (20 intentos / 15 min). Al desactivar un usuario o asignarle contraseña se cierran sus sesiones (`User::cerrarSesiones`). Cabeceras de seguridad (`CabecerasSeguridad`) y páginas de error en español. Se quitaron el restablecimiento por correo y la verificación de correo de Breeze. `SeguridadTest` exige que toda ruta sea de admin o esté revisada para el vendedor. GitHub Actions corre las pruebas con SQLite y MySQL, y con MySQL comprueba el bloqueo del comprador (`BloqueoConcurrenteTest`).
 - Auditoría: inicio de sesión, remisiones emitidas/anuladas, cambios de precio y stock, abonos/anticipos, cambios de usuarios. Vista de auditoría para admin.
 - Límite de intentos de login, cabeceras de seguridad, `fillable` correctos, autorización en todos los controladores.
 - Pruebas de features: permisos por rol, flujo completo de remisión, cartera, exportaciones. Workflow de GitHub Actions corriendo la suite en cada push.

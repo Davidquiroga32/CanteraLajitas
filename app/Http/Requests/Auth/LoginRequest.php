@@ -14,6 +14,14 @@ use Illuminate\Validation\ValidationException;
 class LoginRequest extends FormRequest
 {
     /**
+     * Intentos fallidos permitidos desde un mismo equipo (con cualquier correo)
+     * antes de bloquearlo. Es holgado porque en la cantera varios usan la misma red.
+     */
+    public const INTENTOS_POR_EQUIPO = 20;
+
+    public const MINUTOS_BLOQUEO_EQUIPO = 15;
+
+    /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
@@ -57,6 +65,7 @@ class LoginRequest extends FormRequest
 
         if (! $autenticado) {
             RateLimiter::hit($this->throttleKey());
+            RateLimiter::hit($this->throttleKeyEquipo(), self::MINUTOS_BLOQUEO_EQUIPO * 60);
 
             throw ValidationException::withMessages([
                 'email' => $inactivo ? trans('auth.inactive') : trans('auth.failed'),
@@ -73,13 +82,16 @@ class LoginRequest extends FormRequest
      */
     public function ensureIsNotRateLimited(): void
     {
-        if (! RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
+        $porCorreo = RateLimiter::tooManyAttempts($this->throttleKey(), 5);
+        $porEquipo = RateLimiter::tooManyAttempts($this->throttleKeyEquipo(), self::INTENTOS_POR_EQUIPO);
+
+        if (! $porCorreo && ! $porEquipo) {
             return;
         }
 
         event(new Lockout($this));
 
-        $seconds = RateLimiter::availableIn($this->throttleKey());
+        $seconds = RateLimiter::availableIn($porEquipo ? $this->throttleKeyEquipo() : $this->throttleKey());
 
         throw ValidationException::withMessages([
             'email' => trans('auth.throttle', [
@@ -87,6 +99,14 @@ class LoginRequest extends FormRequest
                 'minutes' => ceil($seconds / 60),
             ]),
         ]);
+    }
+
+    /**
+     * Clave del límite por equipo (IP): frena a quien prueba muchos correos distintos.
+     */
+    public function throttleKeyEquipo(): string
+    {
+        return 'login-equipo|'.$this->ip();
     }
 
     /**

@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 #[Fillable(['name', 'cedula', 'cargo', 'role', 'activo', 'email', 'password'])]
 #[Hidden(['password', 'remember_token'])]
@@ -44,6 +46,23 @@ class User extends Authenticatable
     public function remisiones(): HasMany
     {
         return $this->hasMany(Remision::class, 'vendedor_id');
+    }
+
+    /**
+     * Cierra las sesiones abiertas del usuario en todos sus equipos (y anula el
+     * "recordar mis datos"), menos la sesión `$excepto`, si se indica.
+     */
+    public function cerrarSesiones(?string $excepto = null): void
+    {
+        $this->forceFill(['remember_token' => Str::random(60)])->saveQuietly();
+
+        if (config('session.driver') === 'database') {
+            DB::connection(config('session.connection'))
+                ->table(config('session.table', 'sessions'))
+                ->where('user_id', $this->getKey())
+                ->when($excepto, fn ($q, string $id) => $q->where('id', '!=', $id))
+                ->delete();
+        }
     }
 
     public function isAdmin(): bool

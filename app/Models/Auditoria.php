@@ -24,14 +24,15 @@ class Auditoria extends Model
     }
 
     /**
-     * Registra una acción del usuario autenticado.
+     * Registra una acción del usuario autenticado (o de `$usuario`, cuando aún no
+     * hay sesión, como en un intento de ingreso).
      *
      * @param  array<string, mixed>|null  $datos
      */
-    public static function registrar(string $accion, ?Model $auditable = null, ?array $datos = null): self
+    public static function registrar(string $accion, ?Model $auditable = null, ?array $datos = null, ?User $usuario = null): self
     {
         return static::query()->create([
-            'user_id' => auth()->id(),
+            'user_id' => $usuario?->id ?? auth()->id(),
             'accion' => $accion,
             'auditable_type' => $auditable?->getMorphClass(),
             'auditable_id' => $auditable?->getKey(),

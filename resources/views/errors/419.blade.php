@@ -1,0 +1,1 @@
+@include('errors.plantilla', ['codigo' => 419, 'titulo' => 'La página se venció', 'mensaje' => 'La página estuvo abierta mucho tiempo sin usarse y por seguridad se venció. Vuelve a la página anterior, revisa los datos y envíalos otra vez.', 'volver' => true])
