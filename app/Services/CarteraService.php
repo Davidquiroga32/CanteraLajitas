@@ -34,7 +34,10 @@ class CarteraService
         $this->validarMedio($medio);
 
         return DB::transaction(function () use ($comprador, $valor, $medio, $usuario, $nota, $fecha): MovimientoCartera {
-            $deuda = $comprador->saldoCredito();
+            // Bloquea al comprador para que dos abonos al mismo tiempo (doble clic)
+            // no pasen ambos la validación contra la misma deuda.
+            Comprador::query()->whereKey($comprador->id)->lockForUpdate()->first();
+            $deuda = $comprador->saldoCredito(bloquear: true);
 
             if ($valor <= 0 || $valor > $deuda) {
                 throw ValidationException::withMessages([

@@ -7,6 +7,7 @@ use App\Http\Controllers\EquipoController;
 use App\Http\Controllers\MaterialController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RemisionController;
+use App\Http\Controllers\ReporteController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function () {
@@ -50,7 +51,15 @@ Route::middleware('auth')->group(function () {
         Route::post('/equipo', [EquipoController::class, 'store'])->name('equipo.store');
         Route::patch('/equipo/{usuario}', [EquipoController::class, 'update'])->whereNumber('usuario')->name('equipo.update');
         Route::put('/equipo/{usuario}/contrasena', [EquipoController::class, 'asignarContrasena'])->whereNumber('usuario')->name('equipo.contrasena');
-        Route::view('/reportes', 'proximamente', ['modulo' => 'Reportes', 'fase' => 7])->name('reportes.index');
+        Route::get('/reportes', [ReporteController::class, 'index'])->name('reportes.index');
+        Route::get('/reportes/exportar/excel', [ReporteController::class, 'exportarExcel'])->name('reportes.excel');
+        Route::get('/reportes/exportar/pdf', [ReporteController::class, 'exportarPdf'])->name('reportes.pdf');
+        Route::get('/reportes/deudores', [ReporteController::class, 'deudores'])->name('reportes.deudores');
+        Route::get('/reportes/deudores/excel', [ReporteController::class, 'deudoresExcel'])->name('reportes.deudores-excel');
+        Route::get('/reportes/deudores/pdf', [ReporteController::class, 'deudoresPdf'])->name('reportes.deudores-pdf');
+        Route::get('/reportes/cliente/{comprador?}', [ReporteController::class, 'cliente'])->whereNumber('comprador')->name('reportes.cliente');
+        Route::get('/reportes/cliente/{comprador}/excel', [ReporteController::class, 'clienteExcel'])->whereNumber('comprador')->name('reportes.cliente-excel');
+        Route::get('/reportes/cliente/{comprador}/pdf', [ReporteController::class, 'clientePdf'])->whereNumber('comprador')->name('reportes.cliente-pdf');
     });
 });
 

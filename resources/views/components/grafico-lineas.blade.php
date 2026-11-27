@@ -1,5 +1,5 @@
 @use('App\Support\Formato')
-@props(['serie', 'alto' => 250])
+@props(['serie', 'alto' => 250, 'descripcion' => 'Ventas por día'])
 
 {{--
     Gráfico de línea en SVG generado en el servidor (como el boceto).
@@ -22,7 +22,7 @@
 @endphp
 
 <div class="chart" x-data="{ tip: null, tx: 0, ty: 0 }">
-    <svg viewBox="0 0 {{ $ancho }} {{ $alto }}" width="100%" role="img" aria-label="Ventas por día">
+    <svg viewBox="0 0 {{ $ancho }} {{ $alto }}" width="100%" role="img" aria-label="{{ $descripcion }}">
         @foreach ([0, .25, .5, .75, 1] as $f)
             <line x1="{{ $m['l'] }}" x2="{{ $ancho - $m['r'] }}" y1="{{ $y($maximo * $f) }}" y2="{{ $y($maximo * $f) }}" stroke="#e3ddcd" />
             <text x="{{ $m['l'] - 10 }}" y="{{ $y($maximo * $f) + 4 }}" text-anchor="end" font-size="10.5" fill="#7a7466" font-family="JetBrains Mono">{{ Formato::millones($maximo * $f) }}</text>

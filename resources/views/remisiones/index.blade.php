@@ -23,7 +23,7 @@
             <div class="pd grid gap-4">
                 <div class="pills" data-vivo="atajos">
                     @foreach (FiltroRemisiones::PRESETS as $clave => $texto)
-                        <a @class(['pill', 'on' => $filtro->preset === $clave]) href="{{ route('remisiones.index', [...\Illuminate\Support\Arr::except($params, ['desde', 'hasta', 'rango']), 'rango' => $clave]) }}">{{ $texto }}</a>
+                        <a @class(['pill', 'on' => $filtro->preset === (string) $clave]) href="{{ route('remisiones.index', [...\Illuminate\Support\Arr::except($params, ['desde', 'hasta', 'rango']), 'rango' => $clave]) }}">{{ $texto }}</a>
                     @endforeach
                 </div>
 

@@ -64,18 +64,29 @@ class Comprador extends Model
 
     /**
      * Lo que el comprador le debe a la empresa (compras a crédito menos abonos).
+     *
+     * Con `bloquear` (dentro de una transacción) lee el último saldo confirmado y
+     * bloquea esos movimientos hasta que la transacción termine.
      */
-    public function saldoCredito(): int
+    public function saldoCredito(bool $bloquear = false): int
     {
-        return (int) $this->movimientosCartera()->where('cuenta', CuentaCartera::Credito)->sum('valor');
+        return $this->saldo(CuentaCartera::Credito, $bloquear);
     }
 
     /**
-     * Saldo a favor disponible por anticipos.
+     * Saldo a favor disponible por anticipos. Ver `saldoCredito` sobre `bloquear`.
      */
-    public function saldoAnticipo(): int
+    public function saldoAnticipo(bool $bloquear = false): int
     {
-        return (int) $this->movimientosCartera()->where('cuenta', CuentaCartera::Anticipo)->sum('valor');
+        return $this->saldo(CuentaCartera::Anticipo, $bloquear);
+    }
+
+    private function saldo(CuentaCartera $cuenta, bool $bloquear): int
+    {
+        return (int) $this->movimientosCartera()
+            ->where('cuenta', $cuenta)
+            ->when($bloquear, fn ($q) => $q->lockForUpdate())
+            ->sum('valor');
     }
 
     /**

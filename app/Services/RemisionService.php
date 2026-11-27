@@ -175,7 +175,9 @@ class RemisionService
     private function resolverComprador(array $datos): Comprador
     {
         if (! empty($datos['comprador_id'])) {
-            return Comprador::query()->findOrFail($datos['comprador_id']);
+            // Bloquea al comprador hasta terminar: si llega otra remisión suya al mismo
+            // tiempo, espera y después ve el saldo de anticipo ya descontado.
+            return Comprador::query()->lockForUpdate()->findOrFail($datos['comprador_id']);
         }
 
         $nuevo = $datos['comprador'];
@@ -231,7 +233,7 @@ class RemisionService
      */
     private function resolverDiferenciaAnticipo(Comprador $comprador, int $total, FormaPago|string|null $pagoDiferencia): array
     {
-        $disponible = $comprador->saldoAnticipo();
+        $disponible = $comprador->saldoAnticipo(bloquear: true);
 
         if ($disponible <= 0) {
             throw ValidationException::withMessages([

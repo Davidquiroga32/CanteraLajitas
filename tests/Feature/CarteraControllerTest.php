@@ -163,6 +163,39 @@ class CarteraControllerTest extends TestCase
         $response->assertSeeInOrder(['$ 1.250.000', '$ 750.000', '$ 1.000.000']);
     }
 
+    public function test_statement_has_back_button_to_the_page_it_came_from(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $comprador = Comprador::factory()->create();
+        $desdeDeudores = route('reportes.deudores', ['orden' => 'dias']);
+
+        $this->actingAs($admin)->from($desdeDeudores)->get(route('cartera.show', $comprador))
+            ->assertOk()
+            ->assertSee('Volver a clientes que deben')
+            ->assertSee('href="'.e($desdeDeudores).'"', false);
+
+        $this->actingAs($admin)->from('https://otro-sitio.example/pagina')->get(route('cartera.show', $comprador))
+            ->assertSee('Volver a cartera')
+            ->assertSee('href="'.route('cartera.index').'"', false);
+    }
+
+    public function test_excel_writes_text_that_looks_like_a_formula_as_plain_text(): void
+    {
+        $comprador = Comprador::factory()->create(['nombre' => '=1+1', 'ciudad' => '=HYPERLINK("http://malo.example","Ver")']);
+        MovimientoCartera::factory()->for($comprador)->deuda(500_000)->create();
+
+        $response = $this->actingAs(User::factory()->admin()->create())->get(route('cartera.excel'));
+
+        $response->assertDownload();
+        $zip = new \ZipArchive;
+        $zip->open($response->baseResponse->getFile()->getPathname());
+        $hoja = $zip->getFromName('xl/worksheets/sheet1.xml');
+        $zip->close();
+        $this->assertStringNotContainsString('<f>', $hoja);
+        $this->assertStringContainsString('=1+1', $hoja);
+        $this->assertStringContainsString('=HYPERLINK(', html_entity_decode($hoja));
+    }
+
     public function test_statement_exports(): void
     {
         $admin = User::factory()->admin()->create();

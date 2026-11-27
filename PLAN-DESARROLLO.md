@@ -201,6 +201,7 @@ Otras reglas: abonos y anticipos se reciben solo en efectivo o transferencia.
 - Admin: listar, crear, editar y desactivar usuarios (nombre, cédula, cargo, rol, correo, contraseña), con remisiones y valor vendido en el mes.
 
 ### Fase 7 — Reportes
+> Hecho: `ReporteController` y `ReporteService` (solo admin). `RangoFechas` con atajos (Hoy, 7, 15, 30 días, este mes, mes anterior; por defecto el mes actual) y comparación con el periodo anterior. Reporte de ventas: cifras sin donaciones ni anuladas, donaciones aparte, gráfico por día (por semana si el rango pasa de 31 días), desglose por material, vendedor y forma de pago. Reporte por cliente (búsqueda, compras del periodo, abonos y saldo de hoy) y clientes que deben (última compra a crédito, último abono, días sin abonar, orden por deuda o por días). Excel con varias hojas (`ExcelExport::descargarHojas`) y PDF de cada reporte.
 - Rango con presets (Hoy, 7, 15, 30 días, mes actual, mes anterior) y fechas libres.
 - KPIs, gráfico por día/semana, detalle por material, por vendedor y por forma de pago (donaciones aparte).
 - **Reporte por cliente** y **reporte de todos los clientes que deben**.

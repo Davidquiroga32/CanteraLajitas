@@ -161,6 +161,26 @@ class RemisionServiceTest extends TestCase
         $this->assertSame(700_000, $comprador->saldoCredito());
     }
 
+    public function test_second_advance_sale_sees_balance_already_used_and_never_leaves_it_negative(): void
+    {
+        $comprador = Comprador::factory()->create();
+        MovimientoCartera::factory()->for($comprador)->create(['valor' => 1_000_000]);
+        $material = Material::factory()->create(['precio_m3' => 100_000]);
+        $remisiones = app(RemisionService::class);
+
+        $remisiones->emitir(User::factory()->create(), $this->datos($comprador, $material, FormaPago::Anticipo));
+
+        try {
+            $remisiones->emitir(User::factory()->create(), $this->datos($comprador, $material, FormaPago::Anticipo));
+            $this->fail('La segunda remisión no debía usar un anticipo ya gastado.');
+        } catch (ValidationException $e) {
+            $this->assertArrayHasKey('forma_pago', $e->errors());
+        }
+
+        $this->assertSame(0, $comprador->saldoAnticipo());
+        $this->assertSame(1, $comprador->remisiones()->count());
+    }
+
     public function test_buyer_taxes_are_discounted_from_total(): void
     {
         $comprador = Comprador::factory()->create(['retefuente' => true, 'reteica' => true]);

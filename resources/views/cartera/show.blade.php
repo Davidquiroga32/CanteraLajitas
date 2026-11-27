@@ -4,10 +4,28 @@
         ['titulo' => 'Deuda (compras a crédito)', 'filas' => $credito, 'vacio' => 'No tiene compras a crédito.', 'sumaTexto' => 'Debe más', 'restaTexto' => 'Abonó'],
         ['titulo' => 'Anticipos (saldo a favor)', 'filas' => $anticipos, 'vacio' => 'No ha dejado anticipos.', 'sumaTexto' => 'Entregó', 'restaTexto' => 'Usó'],
     ];
+    $anterior = url()->previous();
+    $origenes = [
+        route('cartera.index') => 'Volver a cartera',
+        route('compradores.index') => 'Volver a compradores',
+        route('reportes.deudores') => 'Volver a clientes que deben',
+        route('reportes.cliente', $comprador) => 'Volver al reporte del cliente',
+    ];
+    [$urlVolver, $textoVolver] = [route('cartera.index'), 'Volver a cartera'];
+    foreach ($origenes as $url => $texto) {
+        if ($anterior === $url || str_starts_with($anterior, $url.'?')) {
+            [$urlVolver, $textoVolver] = [$anterior, $texto];
+        }
+    }
 @endphp
 
 <x-app-layout>
     <x-slot name="titulo">Cartera · {{ $comprador->nombre }}</x-slot>
+
+    <a href="{{ $urlVolver }}" class="btn mb-4 w-fit">
+        <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
+        {{ $textoVolver }}
+    </a>
 
     <x-encabezado :ceja="'Cartera · '.$comprador->documentoCompleto()" :subtitulo="$comprador->ciudad">
         {{ $comprador->nombre }}
