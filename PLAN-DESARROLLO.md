@@ -191,7 +191,8 @@ Otras reglas: abonos y anticipos se reciben solo en efectivo o transferencia.
 - Al guardar: pantalla de confirmación + **Imprimir 3 copias** y **Descargar PDF**.
 - PDF con `barryvdh/laravel-dompdf` (A4 o media carta, por definir), 3 copias con firmas.
 
-### Fase 5 — Remisiones (historial) y cartera
+### Fase 5 — Remisiones (historial) y cartera  ✅
+> Hecho: historial con `FiltroRemisiones` (atajos Hoy/7/15/30 días/mes, fechas, material, vendedor, forma de pago, búsqueda por número, comprador o placa, incluir anuladas; por defecto últimos 15 días), totales sin donaciones ni anuladas, exportación a Excel (`openspout/openspout`, `App\Support\ExcelExport`) y PDF; anulación con motivo (solo admin). `CarteraController` (solo admin): deudores y anticipos con totales, detalle con saldo acumulado, registrar abono/anticipo (efectivo o transferencia, fecha no futura), estado de cuenta y listados en Excel y PDF.
 - **Remisiones**: filtros por rango (Hoy, 7, 15, 30 días, mes), material, vendedor, forma de pago, búsqueda; totales en pie; ver/reimprimir; anular (admin).
 - Exportar el listado filtrado a **Excel** y **PDF**.
 - **Cartera**: listado de compradores con deuda y con anticipos; detalle de movimientos; registrar abono y registrar anticipo; estado de cuenta en PDF/Excel.

@@ -85,11 +85,14 @@ class RemisionControllerTest extends TestCase
         $material = Material::factory()->create(['stock_m3' => 50]);
         $datos = $this->datos(Comprador::factory()->make(), $material);
         unset($datos['comprador_id']);
-        $datos['comprador'] = ['nombre' => 'Obras del Llano', 'tipo_documento' => 'NIT', 'documento' => '901.555.000-1', 'ciudad' => 'Acacías'];
+        $datos['comprador'] = ['nombre' => 'Obras del Llano', 'tipo_documento' => 'NIT', 'documento' => '901.555.000-1', 'ciudad' => 'Acacías', 'impuestos' => 'si', 'retefuente' => '1'];
 
         $this->actingAs(User::factory()->create())->post(route('remisiones.store'), $datos)->assertRedirect();
 
-        $this->assertSame('Obras del Llano', Remision::query()->sole()->comprador->nombre);
+        $remision = Remision::query()->sole();
+        $this->assertSame('Obras del Llano', $remision->comprador->nombre);
+        $this->assertTrue($remision->comprador->retefuente);
+        $this->assertFalse($remision->comprador->reteica);
     }
 
     /**
@@ -155,16 +158,56 @@ class RemisionControllerTest extends TestCase
         $this->assertSame(0, Remision::query()->count());
     }
 
-    public function test_advance_payment_difference_becomes_debt(): void
+    public function test_print_shows_taxes_discounted_from_total(): void
+    {
+        $vendedor = User::factory()->create();
+        $comprador = Comprador::factory()->create(['retefuente' => true, 'reteica' => true]);
+        $material = Material::factory()->create(['precio_m3' => 100_000, 'stock_m3' => 50]);
+        $remision = app(RemisionService::class)->emitir($vendedor, $this->datos($comprador, $material, ['lineas' => [['material_id' => $material->id, 'cantidad_m3' => 10]]]));
+
+        $response = $this->actingAs($vendedor)->get(route('remisiones.imprimir', $remision));
+
+        $response->assertSeeInOrder(['SUBTOTAL', '$ 1.000.000', 'RETENCIÓN EN LA FUENTE 2,5%', '$ 25.000', 'ICA 10 × 1.000 (1%)', '$ 10.000', 'TOTAL A PAGAR', '$ 965.000']);
+    }
+
+    public function test_advance_payment_difference_paid_in_cash_does_not_become_debt(): void
     {
         $comprador = Comprador::factory()->create();
         MovimientoCartera::factory()->for($comprador)->create(['valor' => 200_000]);
         $material = Material::factory()->create(['precio_m3' => 100_000, 'stock_m3' => 50]);
 
-        $this->actingAs(User::factory()->create())->post(route('remisiones.store'), $this->datos($comprador, $material, ['forma_pago' => FormaPago::Anticipo->value]));
+        $this->actingAs(User::factory()->create())->post(route('remisiones.store'), $this->datos($comprador, $material, ['forma_pago' => FormaPago::Anticipo->value, 'pago_diferencia' => 'efectivo']));
+
+        $remision = Remision::query()->sole();
+        $this->assertSame(0, $comprador->saldoAnticipo());
+        $this->assertSame(0, $comprador->saldoCredito());
+        $this->assertSame(FormaPago::Efectivo, $remision->diferencia_forma_pago);
+        $this->assertSame(400_000, $remision->diferencia_valor);
+    }
+
+    public function test_advance_payment_difference_on_credit_becomes_debt(): void
+    {
+        $comprador = Comprador::factory()->create();
+        MovimientoCartera::factory()->for($comprador)->create(['valor' => 200_000]);
+        $material = Material::factory()->create(['precio_m3' => 100_000, 'stock_m3' => 50]);
+
+        $this->actingAs(User::factory()->create())->post(route('remisiones.store'), $this->datos($comprador, $material, ['forma_pago' => FormaPago::Anticipo->value, 'pago_diferencia' => 'credito']));
 
         $this->assertSame(0, $comprador->saldoAnticipo());
         $this->assertSame(400_000, $comprador->saldoCredito());
+    }
+
+    public function test_advance_payment_short_requires_choosing_how_to_pay_difference(): void
+    {
+        $comprador = Comprador::factory()->create();
+        MovimientoCartera::factory()->for($comprador)->create(['valor' => 200_000]);
+        $material = Material::factory()->create(['precio_m3' => 100_000, 'stock_m3' => 50]);
+
+        $response = $this->actingAs(User::factory()->create())->post(route('remisiones.store'), $this->datos($comprador, $material, ['forma_pago' => FormaPago::Anticipo->value]));
+
+        $response->assertSessionHasErrors('pago_diferencia');
+        $this->assertSame(0, Remision::query()->count());
+        $this->assertSame(200_000, $comprador->saldoAnticipo());
     }
 
     public function test_seller_cannot_see_another_sellers_remision(): void
@@ -188,7 +231,8 @@ class RemisionControllerTest extends TestCase
         $response->assertOk();
         $response->assertSee('PLACA IGU-10411');
         $response->assertSee('000001');
-        $response->assertSee('C.C. 1.121.845.330');
+        $response->assertDontSee('C.C. 1.121.845.330');
+        $response->assertSeeInOrder(['QUIEN DESPACHA', 'Sebastián Cárdenas', 'CLIENTE', 'Carlos Piñeros']);
         $response->assertSee('901.220.664-9');
         $this->assertSame(1, substr_count($response->getContent(), 'COPIA VENDEDOR'));
         $this->assertSame(2, substr_count($response->getContent(), 'COPIA CLIENTE'));

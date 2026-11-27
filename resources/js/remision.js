@@ -8,13 +8,15 @@ const m3 = (n) => (Number(n) || 0).toLocaleString('es-CO', { maximumFractionDigi
 export default (config) => ({
     materiales: config.materiales,
     urlBuscar: config.urlBuscar,
-    comprador: config.comprador ?? { id: null, nombre: '', tipo_documento: 'NIT', documento: '', ciudad: '', deuda: 0, anticipo: 0 },
+    tasas: config.tasas,
+    comprador: config.comprador ?? { id: null, nombre: '', tipo_documento: 'NIT', documento: '', ciudad: 'San José del Guaviare', impuestos: 'no', retefuente: false, reteica: false, deuda: 0, anticipo: 0 },
     lineas: config.lineas?.length ? config.lineas : [{ material_id: '', cantidad_m3: '' }],
     conductor: config.valores?.conductor ?? '',
     placa: config.valores?.placa ?? '',
     maquina: config.valores?.maquina ?? '',
     destino: config.valores?.destino ?? '',
     forma_pago: config.valores?.forma_pago ?? '',
+    pago_diferencia: config.valores?.pago_diferencia ?? '',
     observaciones: config.valores?.observaciones ?? '',
     busqueda: '',
     sugerencias: [],
@@ -42,8 +44,30 @@ export default (config) => ({
         return Math.round((Number(linea.cantidad_m3) || 0) * this.precio(linea));
     },
 
-    get total() {
+    get subtotalGeneral() {
         return this.lineas.reduce((suma, l) => suma + this.subtotal(l), 0);
+    },
+
+    /** Retenciones del comprador (no aplican a donaciones). */
+    get aplicaRetefuente() {
+        return this.forma_pago !== 'donacion' && Boolean(this.comprador.retefuente) && (this.compradorElegido || this.comprador.impuestos === 'si');
+    },
+
+    get aplicaReteica() {
+        return this.forma_pago !== 'donacion' && Boolean(this.comprador.reteica) && (this.compradorElegido || this.comprador.impuestos === 'si');
+    },
+
+    get retefuente() {
+        return this.aplicaRetefuente ? Math.round(this.subtotalGeneral * this.tasas.retefuente / 100) : 0;
+    },
+
+    get reteica() {
+        return this.aplicaReteica ? Math.round(this.subtotalGeneral * this.tasas.reteica / 1000) : 0;
+    },
+
+    /** Neto a pagar: subtotal menos retenciones. */
+    get total() {
+        return this.subtotalGeneral - this.retefuente - this.reteica;
     },
 
     get lineasValidas() {
@@ -96,7 +120,7 @@ export default (config) => ({
     },
 
     cambiarComprador() {
-        this.comprador = { id: null, nombre: '', tipo_documento: 'NIT', documento: '', ciudad: '', deuda: 0, anticipo: 0 };
+        this.comprador = { id: null, nombre: '', tipo_documento: 'NIT', documento: '', ciudad: 'San José del Guaviare', impuestos: 'no', retefuente: false, reteica: false, deuda: 0, anticipo: 0 };
         this.$nextTick(() => document.getElementById('buscar-comprador')?.focus());
     },
 
@@ -105,6 +129,10 @@ export default (config) => ({
             return 0;
         }
         return Math.max(0, this.total - (this.comprador.anticipo || 0));
+    },
+
+    get debeElegirPagoDiferencia() {
+        return this.forma_pago === 'anticipo' && this.compradorElegido && this.comprador.anticipo > 0 && this.diferenciaAnticipo > 0;
     },
 
     quitarFaltante(clave) {
@@ -124,7 +152,10 @@ export default (config) => ({
         if (!this.compradorElegido) {
             if (!this.comprador.nombre.trim()) f.push({ clave: 'comprador', texto: 'El nombre del comprador' });
             if (!this.comprador.documento.trim()) f.push({ clave: 'documento', texto: 'El NIT o cédula del comprador' });
-            if (!this.comprador.ciudad.trim()) f.push({ clave: 'ciudad', texto: 'La ciudad del comprador' });
+            if (!this.comprador.ciudad.trim()) f.push({ clave: 'ciudad', texto: 'El municipio del comprador' });
+            if (this.comprador.impuestos === 'si' && !this.comprador.retefuente && !this.comprador.reteica) {
+                f.push({ clave: 'impuestos', texto: 'Qué impuesto paga el comprador (Retención en la fuente, ICA o los dos)' });
+            }
         }
         this.lineas.forEach((l, i) => {
             if (!l.material_id) f.push({ clave: 'material-' + i, texto: 'El material de la línea ' + (i + 1) });
@@ -138,6 +169,9 @@ export default (config) => ({
         if (!this.forma_pago) f.push({ clave: 'forma_pago', texto: 'La forma de pago' });
         if (this.forma_pago === 'anticipo' && this.compradorElegido && !(this.comprador.anticipo > 0)) {
             f.push({ clave: 'forma_pago', texto: 'Este comprador no tiene anticipo. Elige otra forma de pago' });
+        }
+        if (this.debeElegirPagoDiferencia && !this.pago_diferencia) {
+            f.push({ clave: 'pago_diferencia', texto: 'Cómo paga los ' + dinero(this.diferenciaAnticipo) + ' que el anticipo no alcanza a cubrir' });
         }
         if (this.forma_pago === 'anticipo' && !this.compradorElegido) {
             f.push({ clave: 'forma_pago', texto: 'Un comprador nuevo no tiene anticipo. Elige otra forma de pago' });

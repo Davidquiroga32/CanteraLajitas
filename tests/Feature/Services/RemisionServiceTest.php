@@ -149,16 +149,41 @@ class RemisionServiceTest extends TestCase
         $this->assertSame(2_000_000, $comprador->saldoAnticipo());
     }
 
-    public function test_difference_not_covered_by_advance_becomes_debt(): void
+    public function test_difference_not_covered_by_advance_becomes_debt_when_left_on_credit(): void
     {
         $comprador = Comprador::factory()->create();
         MovimientoCartera::factory()->for($comprador)->create(['valor' => 300_000]);
         $material = Material::factory()->create(['precio_m3' => 100_000]);
 
-        app(RemisionService::class)->emitir(User::factory()->create(), $this->datos($comprador, $material, FormaPago::Anticipo));
+        app(RemisionService::class)->emitir(User::factory()->create(), [...$this->datos($comprador, $material, FormaPago::Anticipo), 'pago_diferencia' => FormaPago::Credito]);
 
         $this->assertSame(0, $comprador->saldoAnticipo());
         $this->assertSame(700_000, $comprador->saldoCredito());
+    }
+
+    public function test_buyer_taxes_are_discounted_from_total(): void
+    {
+        $comprador = Comprador::factory()->create(['retefuente' => true, 'reteica' => true]);
+        $material = Material::factory()->create(['precio_m3' => 100_000]);
+
+        $remision = app(RemisionService::class)->emitir(User::factory()->create(), $this->datos($comprador, $material, FormaPago::Credito));
+
+        $this->assertSame(1_000_000, $remision->subtotal);
+        $this->assertSame(25_000, $remision->retefuente);
+        $this->assertSame(10_000, $remision->reteica);
+        $this->assertSame(965_000, $remision->total);
+        $this->assertSame(965_000, $comprador->saldoCredito());
+    }
+
+    public function test_donations_have_no_taxes(): void
+    {
+        $comprador = Comprador::factory()->create(['retefuente' => true]);
+        $material = Material::factory()->create(['precio_m3' => 100_000]);
+
+        $remision = app(RemisionService::class)->emitir(User::factory()->create(), $this->datos($comprador, $material, FormaPago::Donacion));
+
+        $this->assertSame(0, $remision->retefuente);
+        $this->assertSame(1_000_000, $remision->total);
     }
 
     public function test_rejects_advance_payment_when_buyer_has_no_advance(): void

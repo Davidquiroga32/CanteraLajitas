@@ -2,11 +2,12 @@
 @use('App\Enums\TipoDocumento')
 @php
     $esAdmin = auth()->user()->can('admin');
-    $vacio = ['id' => null, 'nombre' => '', 'tipo_documento' => 'NIT', 'documento' => '', 'ciudad' => 'Villavicencio'];
+    $vacio = ['id' => null, 'nombre' => '', 'tipo_documento' => 'NIT', 'documento' => '', 'ciudad' => 'San José del Guaviare', 'impuestos' => 'no', 'retefuente' => false, 'reteica' => false];
     $formulario = $errors->comprador->any()
-        ? ['id' => old('_editando') ? (int) old('_editando') : null, 'nombre' => old('nombre'), 'tipo_documento' => old('tipo_documento', 'NIT'), 'documento' => old('documento'), 'ciudad' => old('ciudad')]
+        ? ['id' => old('_editando') ? (int) old('_editando') : null, 'nombre' => old('nombre'), 'tipo_documento' => old('tipo_documento', 'NIT'), 'documento' => old('documento'), 'ciudad' => old('ciudad'), 'impuestos' => old('impuestos', 'no'), 'retefuente' => (bool) old('retefuente'), 'reteica' => (bool) old('reteica')]
         : $vacio;
     $urlLista = route('compradores.index', request()->except('ver'));
+    $retenciones = \App\Support\Retenciones::vigentes();
 @endphp
 
 <x-app-layout>
@@ -25,24 +26,21 @@
         </x-encabezado>
 
         <section class="card">
-            <form method="GET" action="{{ route('compradores.index') }}" class="flex flex-wrap items-end gap-3 border-b px-[22px] py-[18px]" style="border-color: var(--line)">
+            <form method="GET" action="{{ route('compradores.index') }}" class="flex flex-wrap items-end gap-3 border-b px-[22px] py-[18px]" style="border-color: var(--line)" x-data="filtroEnVivo" role="search">
                 <div class="field min-w-[240px] flex-1">
                     <label for="q">Buscar</label>
-                    <input id="q" name="q" class="inp" value="{{ $busqueda }}" placeholder="Nombre, documento o ciudad…" autocomplete="off">
+                    <input id="q" type="search" name="q" class="inp" value="{{ $busqueda }}" placeholder="Escribe un nombre, documento o municipio…" autocomplete="off">
                 </div>
-                <button type="submit" class="btn pri">Buscar</button>
-                @if ($busqueda !== '')
-                    <a href="{{ route('compradores.index') }}" class="btn">Limpiar</a>
-                @endif
             </form>
 
+            <div data-vivo="lista">
             <div class="tw">
                 <table class="t t-movil">
                     <thead>
                         <tr>
                             <th>Comprador</th>
                             <th>Documento</th>
-                            <th>Ciudad</th>
+                            <th>Municipio</th>
                             <th class="num">Compras</th>
                             <th class="num">Total comprado</th>
                             <th class="num">Cartera</th>
@@ -57,7 +55,7 @@
                                     <div><span @class(['tag mt-1', 'g' => $comprador->tipo_documento === TipoDocumento::CC])>{{ $comprador->tipo_documento->tipoComprador() }}</span></div>
                                 </td>
                                 <td class="mono whitespace-nowrap text-[13px]" data-label="Documento">{{ $comprador->documentoCompleto() }}</td>
-                                <td data-label="Ciudad">{{ $comprador->ciudad ?? '—' }}</td>
+                                <td data-label="Municipio">{{ $comprador->ciudad ?? '—' }}</td>
                                 <td class="num" data-label="Compras">{{ $comprador->compras }}</td>
                                 <td class="num" data-label="Total comprado">{{ Formato::dinero($comprador->total_comprado) }}</td>
                                 <td class="num" data-label="Cartera">
@@ -84,6 +82,7 @@
             @if ($compradores->hasPages())
                 <div class="px-[22px] py-4">{{ $compradores->links() }}</div>
             @endif
+            </div>
         </section>
 
         {{-- Panel con el historial del comprador --}}
@@ -111,10 +110,20 @@
                     </div>
                 </div>
 
+                <p class="mb-4 text-[14px]">
+                    <span class="muted">Impuestos:</span>
+                    @if ($seleccionado->aplicaRetenciones())
+                        <b>{{ collect([$seleccionado->retefuente ? $retenciones->etiquetaRetefuente() : null, $seleccionado->reteica ? $retenciones->etiquetaReteica() : null])->filter()->implode(' y ') }}</b>
+                    @else
+                        <b>No paga</b>
+                    @endif
+                </p>
+
                 <div class="mb-6 flex flex-wrap gap-2">
                     <a class="btn acento" href="{{ route('remisiones.create', ['comprador' => $seleccionado->id]) }}">Vender a este comprador →</a>
                     @if ($esAdmin)
-                        <button type="button" class="btn" @click="editar(@js(['id' => $seleccionado->id, 'nombre' => $seleccionado->nombre, 'tipo_documento' => $seleccionado->tipo_documento->value, 'documento' => $seleccionado->documento, 'ciudad' => $seleccionado->ciudad]))">Editar datos</button>
+                        <button type="button" class="btn" @click="editar(@js(['id' => $seleccionado->id, 'nombre' => $seleccionado->nombre, 'tipo_documento' => $seleccionado->tipo_documento->value, 'documento' => $seleccionado->documento, 'ciudad' => $seleccionado->ciudad, 'impuestos' => $seleccionado->aplicaRetenciones() ? 'si' : 'no', 'retefuente' => $seleccionado->retefuente, 'reteica' => $seleccionado->reteica]))">Editar datos</button>
+                        <a class="btn" href="{{ route('cartera.show', $seleccionado) }}">Ver cartera</a>
                     @endif
                 </div>
 
@@ -166,10 +175,11 @@
                             <input id="c-documento" name="documento" class="inp mono" x-model="form.documento" required maxlength="30" inputmode="numeric" :placeholder="form.tipo_documento === 'NIT' ? '900.412.118-3' : '17.345.220'">
                         </div>
                         <div class="field">
-                            <label for="c-ciudad">Ciudad</label>
+                            <label for="c-ciudad">Municipio</label>
                             <input id="c-ciudad" name="ciudad" class="inp" x-model="form.ciudad" required maxlength="80">
                         </div>
                     </div>
+                    <x-campo-impuestos modelo="form" />
                 </div>
                 <div class="md-ft">
                     <button type="button" class="btn" @click="$dispatch('close-modal', 'comprador')">Cancelar</button>

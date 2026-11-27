@@ -106,7 +106,7 @@ return [
         'nombre' => 'el nombre',
         'documento' => 'el documento',
         'tipo_documento' => 'el tipo de documento',
-        'ciudad' => 'la ciudad',
+        'ciudad' => 'el municipio',
         'conductor' => 'el conductor',
         'placa' => 'la placa',
         'maquina' => 'la máquina que carga',

@@ -35,6 +35,7 @@ class CompradorControllerTest extends TestCase
             'tipo_documento' => 'NIT',
             'documento' => '901.555.000-1',
             'ciudad' => 'Acacías',
+            'impuestos' => 'no',
         ]);
 
         $comprador = Comprador::query()->firstOrFail();
@@ -70,10 +71,57 @@ class CompradorControllerTest extends TestCase
         $response->assertSessionHasErrors(['nombre', 'tipo_documento', 'documento', 'ciudad'], errorBag: 'comprador');
     }
 
+    public function test_saves_buyer_taxes(): void
+    {
+        $this->actingAs(User::factory()->create())->post(route('compradores.store'), [
+            'nombre' => 'Constructora Guaviare',
+            'tipo_documento' => 'NIT',
+            'documento' => '901.000.111-2',
+            'ciudad' => 'San José del Guaviare',
+            'impuestos' => 'si',
+            'retefuente' => '1',
+            'reteica' => '1',
+        ]);
+
+        $comprador = Comprador::query()->sole();
+        $this->assertTrue($comprador->retefuente);
+        $this->assertTrue($comprador->reteica);
+    }
+
+    public function test_requires_choosing_a_tax_when_buyer_pays_taxes(): void
+    {
+        $response = $this->actingAs(User::factory()->create())->post(route('compradores.store'), [
+            'nombre' => 'Constructora Guaviare',
+            'tipo_documento' => 'NIT',
+            'documento' => '901.000.111-2',
+            'ciudad' => 'San José del Guaviare',
+            'impuestos' => 'si',
+        ]);
+
+        $response->assertSessionHasErrors('impuestos', errorBag: 'comprador');
+        $this->assertSame(0, Comprador::query()->count());
+    }
+
+    public function test_answering_no_taxes_clears_checked_taxes(): void
+    {
+        $comprador = Comprador::factory()->create(['retefuente' => true]);
+
+        $this->actingAs(User::factory()->admin()->create())->patch(route('compradores.update', $comprador), [
+            'nombre' => $comprador->nombre,
+            'tipo_documento' => 'NIT',
+            'documento' => $comprador->documento,
+            'ciudad' => 'Calamar',
+            'impuestos' => 'no',
+            'retefuente' => '1',
+        ]);
+
+        $this->assertFalse($comprador->fresh()->retefuente);
+    }
+
     public function test_only_admin_can_edit_buyer(): void
     {
         $comprador = Comprador::factory()->create(['nombre' => 'Original']);
-        $datos = ['nombre' => 'Cambiado', 'tipo_documento' => 'CC', 'documento' => $comprador->documento, 'ciudad' => 'Granada'];
+        $datos = ['nombre' => 'Cambiado', 'tipo_documento' => 'CC', 'documento' => $comprador->documento, 'ciudad' => 'Granada', 'impuestos' => 'no'];
 
         $this->actingAs(User::factory()->create())->patch(route('compradores.update', $comprador), $datos)->assertForbidden();
         $this->assertSame('Original', $comprador->fresh()->nombre);

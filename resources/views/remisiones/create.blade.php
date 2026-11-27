@@ -2,8 +2,10 @@
 @use('App\Enums\FormaPago')
 @php
     $usuario = auth()->user();
+    $retenciones = \App\Support\Retenciones::vigentes();
     $config = [
         'urlBuscar' => route('compradores.buscar'),
+        'tasas' => ['retefuente' => $retenciones->porcentajeRetefuente, 'reteica' => $retenciones->porMilReteica],
         'materiales' => $materiales->map(fn ($m) => [
             'id' => $m->id,
             'nombre' => $m->nombre,
@@ -17,6 +19,8 @@
             'tipo_documento' => $comprador->tipo_documento->value,
             'documento' => $comprador->documento,
             'ciudad' => $comprador->ciudad,
+            'retefuente' => $comprador->retefuente,
+            'reteica' => $comprador->reteica,
             'deuda' => (int) $comprador->saldo_credito,
             'anticipo' => (int) $comprador->saldo_anticipo,
         ] : (old('comprador') ? [
@@ -24,7 +28,10 @@
             'nombre' => old('comprador.nombre', ''),
             'tipo_documento' => old('comprador.tipo_documento', 'NIT'),
             'documento' => old('comprador.documento', ''),
-            'ciudad' => old('comprador.ciudad', ''),
+            'ciudad' => old('comprador.ciudad', 'San José del Guaviare'),
+            'impuestos' => old('comprador.impuestos', 'no'),
+            'retefuente' => (bool) old('comprador.retefuente'),
+            'reteica' => (bool) old('comprador.reteica'),
             'deuda' => 0,
             'anticipo' => 0,
         ] : null),
@@ -35,6 +42,7 @@
             'maquina' => old('maquina', ''),
             'destino' => old('destino', ''),
             'forma_pago' => old('forma_pago', ''),
+            'pago_diferencia' => old('pago_diferencia', ''),
             'observaciones' => old('observaciones', ''),
         ],
     ];
@@ -99,6 +107,8 @@
                                         <span class="tag c" x-show="comprador.deuda > 0" x-text="'Debe ' + dinero(comprador.deuda)"></span>
                                         <span class="tag v" x-show="comprador.anticipo > 0" x-text="'Anticipo a favor ' + dinero(comprador.anticipo)"></span>
                                         <span class="tag g" x-show="!comprador.deuda && !comprador.anticipo">Al día</span>
+                                        <span class="tag" x-show="comprador.retefuente">{{ $retenciones->etiquetaRetefuente() }}</span>
+                                        <span class="tag" x-show="comprador.reteica">{{ $retenciones->etiquetaReteica() }}</span>
                                     </div>
                                 </div>
                             </template>
@@ -135,9 +145,12 @@
                                                 <input id="c-documento" name="comprador[documento]" class="inp mono" :class="falta('documento') && 'con-error'" x-model="comprador.documento" @input="quitarFaltante('documento')" inputmode="numeric" maxlength="30">
                                             </div>
                                             <div class="field">
-                                                <label for="c-ciudad">Ciudad</label>
+                                                <label for="c-ciudad">Municipio</label>
                                                 <input id="c-ciudad" name="comprador[ciudad]" class="inp" :class="falta('ciudad') && 'con-error'" x-model="comprador.ciudad" @input="quitarFaltante('ciudad')" maxlength="80">
                                             </div>
+                                        </div>
+                                        <div class="grid gap-3" :class="falta('impuestos') && 'rounded-xl p-2 con-error'" @change="quitarFaltante('impuestos')">
+                                            <x-campo-impuestos modelo="comprador" prefijo="comprador" />
                                         </div>
                                     </div>
                                 </div>
@@ -234,11 +247,21 @@
                             <div class="aviso mt-3 text-[14px]" x-show="forma_pago === 'anticipo' && compradorElegido" x-cloak>
                                 Anticipo disponible: <b x-text="dinero(comprador.anticipo)"></b>.
                                 <template x-if="diferenciaAnticipo > 0">
-                                    <span>No alcanza: <b x-text="dinero(diferenciaAnticipo)"></b> quedará como <b>deuda</b> del comprador.</span>
+                                    <span>No alcanza: faltan <b x-text="dinero(diferenciaAnticipo)"></b>.</span>
                                 </template>
                                 <template x-if="diferenciaAnticipo === 0 && total > 0">
                                     <span>Después de esta remisión le quedan <b x-text="dinero(comprador.anticipo - total)"></b>.</span>
                                 </template>
+                            </div>
+                            <div class="mt-4" x-show="debeElegirPagoDiferencia" x-cloak>
+                                <div class="lbl mb-2">¿Cómo paga los <span x-text="dinero(diferenciaAnticipo)"></span> que faltan?</div>
+                                <div class="pagos" :class="falta('pago_diferencia') && 'rounded-xl p-1 con-error'">
+                                    <label><input type="radio" name="pago_diferencia" value="efectivo" x-model="pago_diferencia" :disabled="! debeElegirPagoDiferencia" @change="quitarFaltante('pago_diferencia')"> Efectivo</label>
+                                    <label><input type="radio" name="pago_diferencia" value="transferencia" x-model="pago_diferencia" :disabled="! debeElegirPagoDiferencia" @change="quitarFaltante('pago_diferencia')"> Transferencia</label>
+                                    <label><input type="radio" name="pago_diferencia" value="credito" x-model="pago_diferencia" :disabled="! debeElegirPagoDiferencia" @change="quitarFaltante('pago_diferencia')"> Queda debiendo</label>
+                                </div>
+                                <p class="muted mt-2 text-[13.5px]" x-show="pago_diferencia === 'credito'">La diferencia pasa a <b>Cartera</b> y el comprador queda como deudor.</p>
+                                <p class="muted mt-2 text-[13.5px]" x-show="pago_diferencia === 'efectivo' || pago_diferencia === 'transferencia'">El comprador paga la diferencia ahora y <b>no queda debiendo</b>.</p>
                             </div>
                             <div class="aviso mt-3 text-[14px]" x-show="forma_pago === 'credito'" x-cloak>
                                 Esta remisión queda como <b>deuda</b> del comprador<span x-show="comprador.deuda > 0">, que ya debe <b x-text="dinero(comprador.deuda)"></b></span>.
@@ -254,7 +277,7 @@
 
                             <div class="mt-4 flex items-center gap-3 text-[14px]">
                                 <span class="av">{{ $usuario->iniciales() }}</span>
-                                <span>Despacha: <b style="color: var(--navy)">{{ $usuario->name }}</b> <span class="muted mono text-[12.5px]">CC {{ $usuario->cedula ?? '—' }}</span></span>
+                                <span>Despacha: <b style="color: var(--navy)">{{ $usuario->name }}</b></span>
                             </div>
                         </div>
                     </section>
@@ -269,7 +292,7 @@
 
                     <div class="bar-total">
                         <div>
-                            <small>Total</small>
+                            <small x-text="retefuente + reteica > 0 ? 'Total a pagar (con retenciones)' : 'Total'">Total</small>
                             <b x-text="dinero(total)">$ 0</b>
                         </div>
                         <button type="submit" class="btn acento" :disabled="enviando" @disabled($materiales->isEmpty())>

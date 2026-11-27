@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Table('compradores')]
-#[Fillable(['nombre', 'tipo_documento', 'documento', 'ciudad', 'activo'])]
+#[Fillable(['nombre', 'tipo_documento', 'documento', 'ciudad', 'retefuente', 'reteica', 'activo'])]
 class Comprador extends Model
 {
     /** @use HasFactory<CompradorFactory> */
@@ -28,6 +28,8 @@ class Comprador extends Model
         return [
             'tipo_documento' => TipoDocumento::class,
             'activo' => 'boolean',
+            'retefuente' => 'boolean',
+            'reteica' => 'boolean',
         ];
     }
 
@@ -45,6 +47,11 @@ class Comprador extends Model
     public function movimientosCartera(): HasMany
     {
         return $this->hasMany(MovimientoCartera::class);
+    }
+
+    public function aplicaRetenciones(): bool
+    {
+        return $this->retefuente || $this->reteica;
     }
 
     /**

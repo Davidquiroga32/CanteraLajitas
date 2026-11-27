@@ -59,7 +59,7 @@ class CompradorController extends Controller
 
     public function store(GuardarCompradorRequest $request): RedirectResponse
     {
-        $comprador = Comprador::query()->create($request->validated());
+        $comprador = Comprador::query()->create($request->datosComprador());
 
         Auditoria::registrar('comprador.creado', $comprador, $comprador->only(['nombre', 'documento']));
 
@@ -68,7 +68,7 @@ class CompradorController extends Controller
 
     public function update(GuardarCompradorRequest $request, Comprador $comprador): RedirectResponse
     {
-        $comprador->fill($request->validated());
+        $comprador->fill($request->datosComprador());
         $cambios = collect($comprador->getDirty())->map(fn ($nuevo, $campo) => ['antes' => $comprador->getOriginal($campo), 'despues' => $nuevo]);
         $comprador->save();
 

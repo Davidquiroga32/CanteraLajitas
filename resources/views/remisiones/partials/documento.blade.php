@@ -9,12 +9,14 @@
     $logo = ($paraPdf ?? false) ? public_path('images/logo-cantera-lajitas.png') : asset('images/logo-cantera-lajitas.png');
     $comprador = $remision->comprador;
     $vendedor = $remision->vendedor;
+    $retenciones = \App\Support\Retenciones::vigentes();
+    $conRetenciones = $remision->retefuente + $remision->reteica > 0;
 @endphp
 
 <div class="rm">
     <table class="rm-cab">
         <tr>
-            <td class="rm-logo"><img src="{{ $logo }}" alt="Cantera Lajitas S.A.S." width="96"></td>
+            <td class="rm-logo"><img src="{{ $logo }}" alt="Cantera Lajitas S.A.S." width="124"></td>
             <td class="rm-titulo">
                 <div class="rm-caja">
                     <div class="rm-t1">{{ $config['remision_titulo'] }}</div>
@@ -24,12 +26,13 @@
                 <div class="rm-legal">{{ $config['remision_legal'] }}</div>
             </td>
             <td class="rm-control">
-                <div class="rm-copia">{{ $copia }}</div>
-                <table class="rm-ctl">
-                    <tr><td>CÓDIGO: {{ $config['remision_codigo'] }}</td></tr>
-                    <tr><td class="rm-ctl-ver">VERSIÓN: {{ $config['remision_version'] }}</td></tr>
-                    <tr><td>APROBADO: {{ $config['remision_aprobado'] }}</td></tr>
-                </table>
+                <div class="rm-numcaja">
+                    <div class="rm-et">REMISIÓN N°:</div>
+                    <div class="rm-numero">{{ $remision->numeroFormateado() }}</div>
+                </div>
+                @if ($copia)
+                    <div class="rm-copia">{{ $copia }}</div>
+                @endif
             </td>
         </tr>
     </table>
@@ -37,7 +40,6 @@
     <table class="rm-fila rm-num">
         <tr>
             <td><span class="rm-et">FECHA:</span> {{ $remision->emitida_en->format('d/m/Y') }} <span class="rm-hora">{{ $remision->emitida_en->format('h:i a') }}</span></td>
-            <td class="rm-der"><span class="rm-et">REMISIÓN N°:</span> <span class="rm-numero">{{ $remision->numeroFormateado() }}</span></td>
         </tr>
     </table>
 
@@ -78,8 +80,26 @@
             @endforeach
         </tbody>
         <tfoot>
+            @if ($conRetenciones)
+                <tr>
+                    <td colspan="3" class="rm-der">SUBTOTAL</td>
+                    <td>{{ Formato::dinero($remision->subtotal) }}</td>
+                </tr>
+                @if ($remision->retefuente > 0)
+                    <tr>
+                        <td colspan="3" class="rm-der">{{ mb_strtoupper($retenciones->etiquetaRetefuente()) }}</td>
+                        <td>− {{ Formato::dinero($remision->retefuente) }}</td>
+                    </tr>
+                @endif
+                @if ($remision->reteica > 0)
+                    <tr>
+                        <td colspan="3" class="rm-der">{{ mb_strtoupper($retenciones->etiquetaReteica()) }}</td>
+                        <td>− {{ Formato::dinero($remision->reteica) }}</td>
+                    </tr>
+                @endif
+            @endif
             <tr>
-                <td colspan="3" class="rm-der">TOTAL</td>
+                <td colspan="3" class="rm-der">{{ $conRetenciones ? 'TOTAL A PAGAR' : 'TOTAL' }}</td>
                 <td class="rm-total">{{ Formato::dinero($remision->total) }}</td>
             </tr>
         </tfoot>
@@ -87,12 +107,24 @@
 
     <table class="rm-fila rm-pago">
         <tr>
-            <td class="rm-et" style="width: 18%">FORMA DE PAGO:</td>
+            <td class="rm-et" style="width: 21%; white-space: nowrap">FORMA DE PAGO:</td>
             @foreach ([FormaPago::Efectivo, FormaPago::Transferencia, FormaPago::Credito, FormaPago::Anticipo, FormaPago::Donacion] as $forma)
                 <td>{{ mb_strtoupper($forma->label()) }} <span class="rm-check">{{ $remision->forma_pago === $forma ? 'X' : ' ' }}</span></td>
             @endforeach
         </tr>
     </table>
+
+    @if ($remision->diferencia_valor > 0)
+        <table class="rm-fila">
+            <tr>
+                <td style="width: 45%"><span class="rm-et">PAGADO CON ANTICIPO:</span> {{ Formato::dinero($remision->total - $remision->diferencia_valor) }}</td>
+                <td>
+                    <span class="rm-et">DIFERENCIA {{ Formato::dinero($remision->diferencia_valor) }}:</span>
+                    {{ $remision->diferencia_forma_pago === FormaPago::Credito ? 'QUEDA A CRÉDITO' : mb_strtoupper($remision->diferencia_forma_pago->label()) }}
+                </td>
+            </tr>
+        </table>
+    @endif
 
     <table class="rm-fila">
         <tr>
@@ -113,14 +145,12 @@
                 <div class="rm-linea"></div>
                 <div class="rm-et">QUIEN DESPACHA</div>
                 <div>{{ $vendedor->name }}</div>
-                <div>C.C. {{ $vendedor->cedula ?? '—' }}</div>
             </td>
             <td class="rm-sep"></td>
             <td>
                 <div class="rm-linea"></div>
                 <div class="rm-et">CLIENTE</div>
-                <div>{{ $comprador->nombre }}</div>
-                <div>{{ $comprador->tipo_documento->value === 'NIT' ? 'NIT' : 'C.C.' }} {{ $comprador->documento }}</div>
+                <div>{{ $remision->conductor }}</div>
             </td>
         </tr>
     </table>

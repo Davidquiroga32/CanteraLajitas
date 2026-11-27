@@ -12,6 +12,8 @@ use App\Models\Configuracion;
 use App\Models\Material;
 use App\Models\Remision;
 use App\Models\User;
+use App\Support\Formato;
+use App\Support\Retenciones;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -28,17 +30,19 @@ class RemisionService
      *
      * @param  array{
      *     comprador_id?: int|null,
-     *     comprador?: array{nombre: string, tipo_documento: string, documento: string, ciudad?: string|null},
+     *     comprador?: array{nombre: string, tipo_documento: string, documento: string, ciudad?: string|null, retefuente?: bool, reteica?: bool},
      *     conductor: string,
      *     placa: string,
      *     maquina: string,
      *     destino: string,
      *     forma_pago: FormaPago|string,
+     *     pago_diferencia?: FormaPago|string|null,
      *     observaciones?: string|null,
      *     lineas: list<array{material_id: int, cantidad_m3: float|string}>,
      * }  $datos
      *
-     * @throws ValidationException si el anticipo del comprador no alcanza.
+     * @throws ValidationException si no hay stock, el comprador no tiene anticipo o no
+     *                             se indicó cómo paga lo que el anticipo no cubre.
      */
     public function emitir(User $vendedor, array $datos, ?CarbonInterface $emitidaEn = null): Remision
     {
@@ -66,11 +70,15 @@ class RemisionService
 
             $this->validarStock($materiales, $lineas);
 
-            $total = (int) $lineas->sum('subtotal');
+            $subtotal = (int) $lineas->sum('subtotal');
+            $valores = $formaPago === FormaPago::Donacion
+                ? ['retefuente' => 0, 'reteica' => 0, 'total' => $subtotal]
+                : Retenciones::vigentes()->calcular($subtotal, $comprador->retefuente, $comprador->reteica);
+            $total = $valores['total'];
 
-            if ($formaPago === FormaPago::Anticipo) {
-                $this->validarTieneAnticipo($comprador);
-            }
+            [$diferenciaFormaPago, $diferenciaValor] = $formaPago === FormaPago::Anticipo
+                ? $this->resolverDiferenciaAnticipo($comprador, $total, $datos['pago_diferencia'] ?? null)
+                : [null, 0];
 
             $remision = Remision::query()->create([
                 'numero' => $this->siguienteNumero(),
@@ -83,7 +91,12 @@ class RemisionService
                 'destino' => $datos['destino'],
                 'forma_pago' => $formaPago,
                 'observaciones' => $datos['observaciones'] ?? null,
+                'subtotal' => $subtotal,
+                'retefuente' => $valores['retefuente'],
+                'reteica' => $valores['reteica'],
                 'total' => $total,
+                'diferencia_forma_pago' => $diferenciaFormaPago,
+                'diferencia_valor' => $diferenciaValor,
                 'estado' => EstadoRemision::Emitida,
             ]);
 
@@ -173,6 +186,8 @@ class RemisionService
                 'nombre' => trim($nuevo['nombre']),
                 'tipo_documento' => $nuevo['tipo_documento'],
                 'ciudad' => $nuevo['ciudad'] ?? null,
+                'retefuente' => (bool) ($nuevo['retefuente'] ?? false),
+                'reteica' => (bool) ($nuevo['reteica'] ?? false),
             ],
         );
     }
@@ -207,22 +222,44 @@ class RemisionService
     }
 
     /**
-     * Para pagar con anticipo el comprador debe tener saldo a favor.
+     * Para pagar con anticipo el comprador debe tener saldo a favor. Si no alcanza,
+     * la diferencia se paga en efectivo o transferencia, o queda como deuda (crédito).
+     *
+     * @return array{0: FormaPago|null, 1: int} forma de pago y valor de la diferencia
      *
      * @throws ValidationException
      */
-    private function validarTieneAnticipo(Comprador $comprador): void
+    private function resolverDiferenciaAnticipo(Comprador $comprador, int $total, FormaPago|string|null $pagoDiferencia): array
     {
-        if ($comprador->saldoAnticipo() <= 0) {
+        $disponible = $comprador->saldoAnticipo();
+
+        if ($disponible <= 0) {
             throw ValidationException::withMessages([
                 'forma_pago' => $comprador->nombre.' no tiene saldo de anticipo. Elija otra forma de pago (por ejemplo Crédito).',
             ]);
         }
+
+        $diferencia = max(0, $total - $disponible);
+
+        if ($diferencia === 0) {
+            return [null, 0];
+        }
+
+        $forma = $pagoDiferencia instanceof FormaPago ? $pagoDiferencia : FormaPago::tryFrom((string) $pagoDiferencia);
+
+        if (! in_array($forma, [FormaPago::Efectivo, FormaPago::Transferencia, FormaPago::Credito], true)) {
+            throw ValidationException::withMessages([
+                'pago_diferencia' => 'El anticipo no alcanza: faltan '.Formato::dinero($diferencia).'. Elija cómo paga esa diferencia (efectivo, transferencia o queda debiendo).',
+            ]);
+        }
+
+        return [$forma, $diferencia];
     }
 
     /**
      * Crédito: todo el total pasa a deuda. Anticipo: se descuenta del saldo a
-     * favor y, si no alcanza, la diferencia pasa a deuda (el comprador queda como deudor).
+     * favor y, si no alcanza, la diferencia pasa a deuda solo cuando se eligió
+     * pagarla a crédito (si la paga en efectivo o transferencia no queda debiendo).
      */
     private function registrarEfectoEnCartera(Remision $remision, User $usuario, ?CarbonInterface $fecha): void
     {
@@ -232,8 +269,8 @@ class RemisionService
         if ($remision->forma_pago === FormaPago::Credito) {
             $aCredito = $remision->total;
         } elseif ($remision->forma_pago === FormaPago::Anticipo) {
-            $alAnticipo = min($remision->comprador->saldoAnticipo(), $remision->total);
-            $aCredito = $remision->total - $alAnticipo;
+            $alAnticipo = $remision->total - $remision->diferencia_valor;
+            $aCredito = $remision->diferencia_forma_pago === FormaPago::Credito ? $remision->diferencia_valor : 0;
         }
 
         $base = [

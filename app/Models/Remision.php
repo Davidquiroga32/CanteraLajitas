@@ -17,7 +17,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Table('remisiones')]
 #[Fillable([
     'numero', 'emitida_en', 'comprador_id', 'vendedor_id', 'conductor', 'placa', 'maquina',
-    'destino', 'forma_pago', 'observaciones', 'total', 'estado',
+    'destino', 'forma_pago', 'observaciones', 'subtotal', 'retefuente', 'reteica', 'total',
+    'diferencia_forma_pago', 'diferencia_valor', 'estado',
     'anulada_en', 'anulada_por_id', 'motivo_anulacion',
 ])]
 class Remision extends Model
@@ -43,7 +44,12 @@ class Remision extends Model
             'anulada_en' => 'datetime',
             'forma_pago' => FormaPago::class,
             'estado' => EstadoRemision::class,
+            'subtotal' => 'integer',
+            'retefuente' => 'integer',
+            'reteica' => 'integer',
             'total' => 'integer',
+            'diferencia_forma_pago' => FormaPago::class,
+            'diferencia_valor' => 'integer',
         ];
     }
 

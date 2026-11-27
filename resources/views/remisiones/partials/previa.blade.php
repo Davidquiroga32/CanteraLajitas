@@ -38,13 +38,21 @@
         </tbody>
     </table>
 
+    @php($retencionesPrevia = \App\Support\Retenciones::vigentes())
+    <template x-if="retefuente + reteica > 0">
+        <div class="mt-2 grid gap-0.5 border-t-2 pt-2 text-[12.5px]" style="border-color: #1c1a16">
+            <div class="flex justify-between"><span class="mono muted text-[11px] tracking-[0.08em]">SUBTOTAL</span><span class="mono" x-text="dinero(subtotalGeneral)"></span></div>
+            <div class="flex justify-between" x-show="retefuente > 0"><span class="mono muted text-[11px] tracking-[0.08em]">{{ mb_strtoupper($retencionesPrevia->etiquetaRetefuente()) }}</span><span class="mono" x-text="'− ' + dinero(retefuente)"></span></div>
+            <div class="flex justify-between" x-show="reteica > 0"><span class="mono muted text-[11px] tracking-[0.08em]">{{ mb_strtoupper($retencionesPrevia->etiquetaReteica()) }}</span><span class="mono" x-text="'− ' + dinero(reteica)"></span></div>
+        </div>
+    </template>
     <div class="mt-2 flex items-baseline justify-end gap-4 border-t-2 pt-2" style="border-color: #1c1a16">
-        <span class="mono text-[11px] tracking-[0.08em]">TOTAL</span>
+        <span class="mono text-[11px] tracking-[0.08em]" x-text="retefuente + reteica > 0 ? 'TOTAL A PAGAR' : 'TOTAL'">TOTAL</span>
         <b class="text-[20px]" style="font-family: var(--serif)" x-text="dinero(total)"></b>
     </div>
 
     <div class="mt-3">
-        <div class="fila"><span>Forma de pago</span><span :class="! forma_pago && 'pend'" x-text="{efectivo: 'Efectivo', transferencia: 'Transferencia', credito: 'Crédito', anticipo: 'Anticipo', donacion: 'Donación'}[forma_pago] || 'Pendiente…'"></span></div>
+        <div class="fila"><span>Forma de pago</span><span :class="! forma_pago && 'pend'" x-text="({efectivo: 'Efectivo', transferencia: 'Transferencia', credito: 'Crédito', anticipo: 'Anticipo', donacion: 'Donación'}[forma_pago] || 'Pendiente…') + (debeElegirPagoDiferencia && pago_diferencia ? ' + ' + dinero(diferenciaAnticipo) + ' ' + {efectivo: 'en efectivo', transferencia: 'por transferencia', credito: 'a crédito'}[pago_diferencia] : '')"></span></div>
         <div class="fila"><span>Máquina</span><span :class="! maquina && 'pend'" x-text="maquina || 'Pendiente…'"></span></div>
         <div class="fila"><span>Destino</span><span :class="! destino && 'pend'" x-text="destino || 'Pendiente…'"></span></div>
         <div class="fila"><span>Despacha</span><span>{{ auth()->user()->name }}</span></div>

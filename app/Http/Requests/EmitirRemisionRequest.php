@@ -7,6 +7,7 @@ use App\Enums\TipoDocumento;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 /**
  * Todos los campos de la remisión son obligatorios (no hay teléfono).
@@ -32,6 +33,9 @@ class EmitirRemisionRequest extends FormRequest
             'comprador.tipo_documento' => [$existente, 'required', Rule::enum(TipoDocumento::class)],
             'comprador.documento' => [$existente, 'required', 'string', 'max:30', 'regex:/^[0-9][0-9.\-]*$/'],
             'comprador.ciudad' => [$existente, 'required', 'string', 'max:80'],
+            'comprador.impuestos' => [$existente, 'required', Rule::in(['si', 'no'])],
+            'comprador.retefuente' => [$existente, 'boolean'],
+            'comprador.reteica' => [$existente, 'boolean'],
 
             'lineas' => ['required', 'array', 'min:1', 'max:10'],
             'lineas.*.material_id' => ['required', 'integer', 'distinct', Rule::exists('materiales', 'id')->where('activo', true)],
@@ -42,6 +46,7 @@ class EmitirRemisionRequest extends FormRequest
             'maquina' => ['required', 'string', 'max:80'],
             'destino' => ['required', 'string', 'max:150'],
             'forma_pago' => ['required', Rule::enum(FormaPago::class)],
+            'pago_diferencia' => ['nullable', Rule::in([FormaPago::Efectivo->value, FormaPago::Transferencia->value, FormaPago::Credito->value])],
             'observaciones' => ['nullable', 'string', 'max:255'],
         ];
     }
@@ -59,13 +64,34 @@ class EmitirRemisionRequest extends FormRequest
                 'nombre' => $texto($comprador['nombre'] ?? null),
                 'documento' => is_string($comprador['documento'] ?? null) ? preg_replace('/\s+/', '', $comprador['documento']) : null,
                 'ciudad' => $texto($comprador['ciudad'] ?? null),
+                'retefuente' => ($comprador['impuestos'] ?? null) === 'si' && filter_var($comprador['retefuente'] ?? false, FILTER_VALIDATE_BOOLEAN),
+                'reteica' => ($comprador['impuestos'] ?? null) === 'si' && filter_var($comprador['reteica'] ?? false, FILTER_VALIDATE_BOOLEAN),
             ] : [],
             'conductor' => $texto($this->conductor),
             'placa' => is_string($this->placa) ? mb_strtoupper($texto($this->placa)) : $this->placa,
             'maquina' => $texto($this->maquina),
             'destino' => $texto($this->destino),
+            'pago_diferencia' => $this->filled('pago_diferencia') ? $this->input('pago_diferencia') : null,
             'lineas' => collect($this->input('lineas', []))->filter(fn ($l) => is_array($l) && filled($l['material_id'] ?? null))->values()->all(),
         ]);
+    }
+
+    /**
+     * Si el comprador nuevo paga impuestos debe marcarse cuál (o ambos).
+     *
+     * @return array<int, \Closure(Validator): void>
+     */
+    public function after(): array
+    {
+        return [
+            function (Validator $validator): void {
+                $comprador = $this->input('comprador', []);
+
+                if (! $this->filled('comprador_id') && ($comprador['impuestos'] ?? null) === 'si' && ! $comprador['retefuente'] && ! $comprador['reteica']) {
+                    $validator->errors()->add('comprador.impuestos', 'Marca qué impuesto descuenta el comprador: Retención en la fuente, ICA o los dos.');
+                }
+            },
+        ];
     }
 
     /**
@@ -77,7 +103,9 @@ class EmitirRemisionRequest extends FormRequest
             'comprador.nombre' => 'el nombre del comprador',
             'comprador.tipo_documento' => 'el tipo de documento del comprador',
             'comprador.documento' => 'el NIT o cédula del comprador',
-            'comprador.ciudad' => 'la ciudad del comprador',
+            'comprador.ciudad' => 'el municipio del comprador',
+            'comprador.impuestos' => 'si el comprador paga impuestos',
+            'pago_diferencia' => 'cómo paga la diferencia',
             'lineas' => 'los materiales',
             'placa' => 'la placa del vehículo',
         ];

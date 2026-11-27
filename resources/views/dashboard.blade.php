@@ -118,7 +118,7 @@
                     </thead>
                     <tbody>
                         @forelse ($resumen['ultimas'] as $remision)
-                            <tr>
+                            <tr class="lk" onclick="window.location='{{ route('remisiones.show', $remision) }}'">
                                 <td class="mono" data-label="Remisión">{{ $remision->numeroFormateado() }}</td>
                                 <td class="principal">{{ $remision->comprador->nombre }}</td>
                                 <td class="whitespace-nowrap" data-label="Fecha">{{ Formato::fechaCorta($remision->emitida_en) }} · {{ $remision->emitida_en->format('H:i') }}</td>

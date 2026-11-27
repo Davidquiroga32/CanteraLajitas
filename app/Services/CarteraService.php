@@ -95,6 +95,30 @@ class CarteraService
     }
 
     /**
+     * Movimientos de una cuenta del comprador en orden cronológico, con el saldo
+     * acumulado después de cada uno.
+     *
+     * @return list<array{movimiento: MovimientoCartera, saldo: int}>
+     */
+    public function estadoCuenta(Comprador $comprador, CuentaCartera $cuenta): array
+    {
+        $saldo = 0;
+
+        return $comprador->movimientosCartera()
+            ->where('cuenta', $cuenta)
+            ->with(['remision', 'user'])
+            ->orderBy('registrado_en')
+            ->orderBy('id')
+            ->get()
+            ->map(function (MovimientoCartera $movimiento) use (&$saldo): array {
+                $saldo += $movimiento->valor;
+
+                return ['movimiento' => $movimiento, 'saldo' => $saldo];
+            })
+            ->all();
+    }
+
+    /**
      * Los abonos y anticipos solo se reciben en efectivo o transferencia.
      */
     private function validarMedio(FormaPago $medio): void

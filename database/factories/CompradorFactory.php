@@ -22,7 +22,9 @@ class CompradorFactory extends Factory
             'nombre' => fake()->name(),
             'tipo_documento' => TipoDocumento::CC,
             'documento' => number_format(fake()->unique()->numberBetween(10_000_000, 99_999_999), 0, ',', '.'),
-            'ciudad' => 'Villavicencio',
+            'ciudad' => 'San José del Guaviare',
+            'retefuente' => false,
+            'reteica' => false,
             'activo' => true,
         ];
     }

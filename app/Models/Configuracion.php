@@ -25,12 +25,11 @@ class Configuracion extends Model
         'empresa_direccion' => 'Calle 27 # 23-49 Barrio San Jorge 1',
         'empresa_telefonos' => '317 370 3814 - 315 319 9366',
         'remision_titulo' => 'REMISIÓN DE COMPRA',
-        'remision_codigo' => 'LAJ-FT-10',
-        'remision_version' => '03',
-        'remision_aprobado' => '05-ENE-2026',
         'remision_legal' => 'Contrato de Concesión PLACA IGU-10411 · Agencia Nacional de Minería / Lic. Ambiental Res. No. 205 Corporación CDA',
         'remision_numero_inicial' => '1',
         'remision_copias' => '3',
+        'retefuente_porcentaje' => '2.5',
+        'reteica_por_mil' => '10',
     ];
 
     public static function valor(string $clave): ?string
