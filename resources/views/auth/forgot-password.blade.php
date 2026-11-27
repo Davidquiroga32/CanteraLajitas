@@ -1,25 +1,15 @@
 <x-guest-layout>
-    <div class="mb-4 text-sm text-gray-600">
-        {{ __('Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.') }}
+    <div>
+        <div class="ey">Recuperar acceso</div>
+        <h2 style="font-size: 1.9rem">¿Olvidaste tu contraseña?</h2>
     </div>
 
-    <!-- Session Status -->
-    <x-auth-session-status class="mb-4" :status="session('status')" />
+    <div class="grid gap-4">
+        <p class="text-[15px]" style="color: #4f4a3e">
+            No te preocupes. Pídele al <b>administrador</b> de la cantera que te asigne una contraseña nueva desde la sección <b>Equipo</b>.
+            Con ella podrás entrar de inmediato y, si quieres, cambiarla después en <b>Mi perfil</b>.
+        </p>
 
-    <form method="POST" action="{{ route('password.email') }}">
-        @csrf
-
-        <!-- Email Address -->
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
-        </div>
-
-        <div class="flex items-center justify-end mt-4">
-            <x-primary-button>
-                {{ __('Email Password Reset Link') }}
-            </x-primary-button>
-        </div>
-    </form>
+        <a href="{{ route('login') }}" class="btn pri grande w-full justify-center">Volver a iniciar sesión</a>
+    </div>
 </x-guest-layout>

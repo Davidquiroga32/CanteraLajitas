@@ -123,6 +123,7 @@
                     <a class="btn acento" href="{{ route('remisiones.create', ['comprador' => $seleccionado->id]) }}">Vender a este comprador →</a>
                     @if ($esAdmin)
                         <button type="button" class="btn" @click="editar(@js(['id' => $seleccionado->id, 'nombre' => $seleccionado->nombre, 'tipo_documento' => $seleccionado->tipo_documento->value, 'documento' => $seleccionado->documento, 'ciudad' => $seleccionado->ciudad, 'impuestos' => $seleccionado->aplicaRetenciones() ? 'si' : 'no', 'retefuente' => $seleccionado->retefuente, 'reteica' => $seleccionado->reteica]))">Editar datos</button>
+                        <button type="button" class="btn" @click="$dispatch('open-modal', 'anticipo')">Registrar anticipo</button>
                         <a class="btn" href="{{ route('cartera.show', $seleccionado) }}">Ver cartera</a>
                     @endif
                 </div>
@@ -144,6 +145,10 @@
                     <p class="muted">Sin compras todavía.</p>
                 @endforelse
             </x-panel-lateral>
+
+            @if ($esAdmin)
+                <x-modal-pago-cartera :comprador="$seleccionado" tipo="anticipo" volver="compradores" ayuda='El dinero queda a favor del comprador y se descuenta cuando paga una remisión con "Anticipo".' />
+            @endif
         @endif
 
         {{-- Crear / editar comprador --}}

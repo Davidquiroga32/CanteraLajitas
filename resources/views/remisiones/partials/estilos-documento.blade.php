@@ -29,6 +29,7 @@
     .rm-total { font-size: 14.5px; background: #fbeedd; }
     .rm-pago td { font-size: 10.5px; padding: 6px 5px; }
     .rm-check { display: inline-block; width: 12px; height: 12px; line-height: 12px; border: 1px solid #162342; text-align: center; font-weight: bold; margin-left: 2px; }
+    .rm-obs td { height: 46px; vertical-align: top; }
     .rm-firmas { margin-top: 30px; }
     .rm-firmas td { width: 46%; text-align: center; vertical-align: top; font-size: 11.5px; }
     .rm-firmas .rm-sep { width: 8%; }

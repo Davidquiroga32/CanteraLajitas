@@ -10,6 +10,15 @@ use Illuminate\Validation\Rule;
 class ProfileUpdateRequest extends FormRequest
 {
     /**
+     * Solo el administrador cambia su nombre y correo desde su perfil. Los datos
+     * de los vendedores los corrige el administrador en Equipo.
+     */
+    public function authorize(): bool
+    {
+        return $this->user()->isAdmin();
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array<string, ValidationRule|array<mixed>|string>

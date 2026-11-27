@@ -272,7 +272,8 @@
 
                             <div class="field mt-4">
                                 <label for="observaciones">Observaciones (opcional)</label>
-                                <input id="observaciones" name="observaciones" class="inp" x-model="observaciones" maxlength="255" placeholder="Ej. Entregar en la portería">
+                                <textarea id="observaciones" name="observaciones" class="inp" rows="3" x-model="observaciones" maxlength="255" placeholder="Novedades con el cliente o el despacho. Ej. El cliente pidió entregar en la portería."></textarea>
+                                <p class="muted text-[13px]">Sale impresa antes de las firmas. Si se deja vacía, queda el espacio para escribir a mano.</p>
                             </div>
 
                             <div class="mt-4 flex items-center gap-3 text-[14px]">

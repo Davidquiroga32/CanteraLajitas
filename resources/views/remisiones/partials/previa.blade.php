@@ -55,6 +55,7 @@
         <div class="fila"><span>Forma de pago</span><span :class="! forma_pago && 'pend'" x-text="({efectivo: 'Efectivo', transferencia: 'Transferencia', credito: 'Crédito', anticipo: 'Anticipo', donacion: 'Donación'}[forma_pago] || 'Pendiente…') + (debeElegirPagoDiferencia && pago_diferencia ? ' + ' + dinero(diferenciaAnticipo) + ' ' + {efectivo: 'en efectivo', transferencia: 'por transferencia', credito: 'a crédito'}[pago_diferencia] : '')"></span></div>
         <div class="fila"><span>Máquina</span><span :class="! maquina && 'pend'" x-text="maquina || 'Pendiente…'"></span></div>
         <div class="fila"><span>Destino</span><span :class="! destino && 'pend'" x-text="destino || 'Pendiente…'"></span></div>
+        <div class="fila"><span>Observaciones</span><span class="text-right" :class="! observaciones && 'pend'" x-text="observaciones || 'Espacio para escribir a mano'"></span></div>
         <div class="fila"><span>Despacha</span><span>{{ auth()->user()->name }}</span></div>
     </div>
 </div>

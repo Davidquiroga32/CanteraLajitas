@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="titulo">Mi perfil</x-slot>
 
-    <x-encabezado ceja="Cuenta" subtitulo="Tus datos de acceso. El rol, la cédula y el cargo los asigna el administrador.">
+    <x-encabezado ceja="Cuenta" :subtitulo="$user->isAdmin() ? 'Tus datos de acceso. El rol, la cédula y el cargo se cambian en Equipo.' : 'Tus datos los registra el administrador. Aquí puedes cambiar tu contraseña.'">
         Mi <em>perfil</em>
     </x-encabezado>
 
@@ -22,7 +22,21 @@
                         <div>{{ $user->cargo ?? '—' }}</div>
                     </div>
                 </div>
-                @include('profile.partials.update-profile-information-form')
+                @if ($user->isAdmin())
+                    @include('profile.partials.update-profile-information-form')
+                @else
+                    <div class="grid grid-cols-1 gap-4 border-t pt-5 sm:grid-cols-2" style="border-color: var(--line)">
+                        <div>
+                            <div class="lbl">Nombre completo</div>
+                            <div class="text-[16px]">{{ $user->name }}</div>
+                        </div>
+                        <div>
+                            <div class="lbl">Correo para ingresar</div>
+                            <div class="break-all text-[16px]">{{ $user->email }}</div>
+                        </div>
+                    </div>
+                    <p class="aviso mt-5 text-[14px]">Si alguno de tus datos está mal, pídele al administrador que lo corrija.</p>
+                @endif
             </div>
         </section>
 

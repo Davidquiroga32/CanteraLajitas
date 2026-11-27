@@ -133,11 +133,9 @@
         </tr>
     </table>
 
-    @if ($remision->observaciones)
-        <table class="rm-fila">
-            <tr><td><span class="rm-et">OBSERVACIONES:</span> {{ $remision->observaciones }}</td></tr>
-        </table>
-    @endif
+    <table class="rm-fila rm-obs">
+        <tr><td><span class="rm-et">OBSERVACIONES:</span> {{ $remision->observaciones }}</td></tr>
+    </table>
 
     <table class="rm-firmas">
         <tr>

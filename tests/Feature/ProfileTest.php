@@ -21,9 +21,9 @@ class ProfileTest extends TestCase
         $response->assertOk();
     }
 
-    public function test_profile_information_can_be_updated(): void
+    public function test_admin_can_update_own_profile_information(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->admin()->create();
 
         $response = $this
             ->actingAs($user)
@@ -45,7 +45,7 @@ class ProfileTest extends TestCase
 
     public function test_email_verification_status_is_unchanged_when_the_email_address_is_unchanged(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->admin()->create();
 
         $response = $this
             ->actingAs($user)
@@ -59,5 +59,31 @@ class ProfileTest extends TestCase
             ->assertRedirect('/profile');
 
         $this->assertNotNull($user->refresh()->email_verified_at);
+    }
+
+    public function test_seller_sees_own_data_without_edit_form(): void
+    {
+        $user = User::factory()->create(['name' => 'Gilberto Pineda']);
+
+        $response = $this->actingAs($user)->get('/profile');
+
+        $response->assertOk();
+        $response->assertSee('Gilberto Pineda');
+        $response->assertSee('pídele al administrador', false);
+        $response->assertDontSee('Datos personales');
+        $response->assertSee('Cambiar contraseña');
+    }
+
+    public function test_seller_cannot_change_own_name_or_email(): void
+    {
+        $user = User::factory()->create(['name' => 'Gilberto Pineda']);
+
+        $response = $this->actingAs($user)->patch('/profile', [
+            'name' => 'Otro Nombre',
+            'email' => 'otro@example.com',
+        ]);
+
+        $response->assertForbidden();
+        $this->assertSame('Gilberto Pineda', $user->refresh()->name);
     }
 }

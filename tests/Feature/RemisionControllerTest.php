@@ -170,6 +170,19 @@ class RemisionControllerTest extends TestCase
         $response->assertSeeInOrder(['SUBTOTAL', '$ 1.000.000', 'RETENCIÓN EN LA FUENTE 2,5%', '$ 25.000', 'ICA 10 × 1.000 (1%)', '$ 10.000', 'TOTAL A PAGAR', '$ 965.000']);
     }
 
+    public function test_print_always_has_observations_space_before_signatures(): void
+    {
+        $vendedor = User::factory()->create();
+        $material = Material::factory()->create(['stock_m3' => 50]);
+        $sinNota = app(RemisionService::class)->emitir($vendedor, $this->datos(Comprador::factory()->create(), $material, ['observaciones' => null]));
+        $conNota = app(RemisionService::class)->emitir($vendedor, $this->datos(Comprador::factory()->create(), $material, ['observaciones' => 'Cliente pidió descargar en la portería']));
+
+        $this->actingAs($vendedor)->get(route('remisiones.imprimir', $sinNota))
+            ->assertSeeInOrder(['OBSERVACIONES:', 'QUIEN DESPACHA']);
+        $this->actingAs($vendedor)->get(route('remisiones.imprimir', $conNota))
+            ->assertSeeInOrder(['OBSERVACIONES:', 'Cliente pidió descargar en la portería', 'QUIEN DESPACHA']);
+    }
+
     public function test_advance_payment_difference_paid_in_cash_does_not_become_debt(): void
     {
         $comprador = Comprador::factory()->create();

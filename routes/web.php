@@ -3,6 +3,7 @@
 use App\Http\Controllers\CarteraController;
 use App\Http\Controllers\CompradorController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EquipoController;
 use App\Http\Controllers\MaterialController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RemisionController;
@@ -45,7 +46,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/cartera/{comprador}/anticipo', [CarteraController::class, 'anticipo'])->whereNumber('comprador')->name('cartera.anticipo');
         Route::get('/cartera/{comprador}/estado-cuenta/excel', [CarteraController::class, 'estadoCuentaExcel'])->whereNumber('comprador')->name('cartera.estado-excel');
         Route::get('/cartera/{comprador}/estado-cuenta/pdf', [CarteraController::class, 'estadoCuentaPdf'])->whereNumber('comprador')->name('cartera.estado-pdf');
-        Route::view('/equipo', 'proximamente', ['modulo' => 'Equipo y vendedores', 'fase' => 6])->name('equipo.index');
+        Route::get('/equipo', [EquipoController::class, 'index'])->name('equipo.index');
+        Route::post('/equipo', [EquipoController::class, 'store'])->name('equipo.store');
+        Route::patch('/equipo/{usuario}', [EquipoController::class, 'update'])->whereNumber('usuario')->name('equipo.update');
+        Route::put('/equipo/{usuario}/contrasena', [EquipoController::class, 'asignarContrasena'])->whereNumber('usuario')->name('equipo.contrasena');
         Route::view('/reportes', 'proximamente', ['modulo' => 'Reportes', 'fase' => 7])->name('reportes.index');
     });
 });

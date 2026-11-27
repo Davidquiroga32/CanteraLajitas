@@ -97,6 +97,59 @@ class CarteraControllerTest extends TestCase
         $this->assertSame(100_000_000, $comprador->saldoAnticipo());
     }
 
+    public function test_advance_from_buyers_panel_returns_to_panel(): void
+    {
+        $comprador = Comprador::factory()->create();
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)->get(route('compradores.index', ['ver' => $comprador->id]))
+            ->assertSee('Registrar anticipo')
+            ->assertSee('Valor recibido (pesos)');
+
+        $response = $this->actingAs($admin)->post(route('cartera.anticipo', $comprador), [
+            'valor' => '5.000.000',
+            'medio_pago' => 'efectivo',
+            'fecha' => now()->toDateString(),
+            '_volver' => 'compradores',
+        ]);
+
+        $response->assertRedirect(route('compradores.index', ['ver' => $comprador->id]));
+        $this->assertSame(5_000_000, $comprador->saldoAnticipo());
+    }
+
+    public function test_seller_cannot_register_advance(): void
+    {
+        $comprador = Comprador::factory()->create();
+        $vendedor = User::factory()->create();
+
+        $this->actingAs($vendedor)->get(route('compradores.index', ['ver' => $comprador->id]))
+            ->assertOk()
+            ->assertDontSee('Registrar anticipo');
+
+        $this->actingAs($vendedor)->post(route('cartera.anticipo', $comprador), [
+            'valor' => '300.000',
+            'medio_pago' => 'efectivo',
+            'fecha' => now()->toDateString(),
+        ])->assertForbidden();
+
+        $this->assertSame(0, $comprador->saldoAnticipo());
+    }
+
+    public function test_seller_cannot_register_debt_payment(): void
+    {
+        $comprador = Comprador::factory()->create();
+        MovimientoCartera::factory()->for($comprador)->deuda(500_000)->create();
+
+        $response = $this->actingAs(User::factory()->create())->post(route('cartera.abono', $comprador), [
+            'valor' => '100000',
+            'medio_pago' => 'efectivo',
+            'fecha' => now()->toDateString(),
+        ]);
+
+        $response->assertForbidden();
+        $this->assertSame(500_000, $comprador->saldoCredito());
+    }
+
     public function test_statement_shows_running_balance(): void
     {
         $comprador = Comprador::factory()->create();

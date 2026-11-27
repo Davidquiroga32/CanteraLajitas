@@ -1,6 +1,5 @@
 @use('App\Support\Formato')
 @php
-    $hoy = now()->toDateString();
     $cuentas = [
         ['titulo' => 'Deuda (compras a crédito)', 'filas' => $credito, 'vacio' => 'No tiene compras a crédito.', 'sumaTexto' => 'Debe más', 'restaTexto' => 'Abonó'],
         ['titulo' => 'Anticipos (saldo a favor)', 'filas' => $anticipos, 'vacio' => 'No ha dejado anticipos.', 'sumaTexto' => 'Entregó', 'restaTexto' => 'Usó'],
@@ -75,47 +74,6 @@
     </div>
 
     {{-- Registrar abono / anticipo --}}
-    @foreach ([
-        ['nombre' => 'abono', 'titulo' => 'Registrar abono', 'ruta' => route('cartera.abono', $comprador), 'ayuda' => 'Debe actualmente '.Formato::dinero($deuda).'. El abono no puede ser mayor.', 'boton' => 'Guardar abono'],
-        ['nombre' => 'anticipo', 'titulo' => 'Registrar anticipo', 'ruta' => route('cartera.anticipo', $comprador), 'ayuda' => 'El dinero queda a favor del comprador y se descuenta cuando paga una remisión con "Anticipo".', 'boton' => 'Guardar anticipo'],
-    ] as $form)
-        <x-modal :name="$form['nombre']" :show="$errors->{$form['nombre']}->any()" maxWidth="lg" focusable>
-            <form method="POST" action="{{ $form['ruta'] }}">
-                @csrf
-                <div class="md-hd">
-                    <div class="ey">{{ $comprador->nombre }}</div>
-                    <h2>{{ $form['titulo'] }}</h2>
-                </div>
-                <div class="md-bd">
-                    <x-alerta-grande titulo="Revisa estos datos" :errores="$errors->{$form['nombre']}->all()" />
-                    <p class="aviso text-[14px]">{{ $form['ayuda'] }}</p>
-                    <div class="field">
-                        <label for="{{ $form['nombre'] }}-valor">Valor recibido (pesos)</label>
-                        <input id="{{ $form['nombre'] }}-valor" name="valor" class="inp mono text-lg" inputmode="numeric" required value="{{ $errors->{$form['nombre']}->any() ? old('valor') : '' }}" placeholder="Ej. 500.000">
-                    </div>
-                    <div class="field">
-                        <span class="lbl">¿Cómo pagó?</span>
-                        <div class="seg">
-                            <label><input type="radio" name="medio_pago" value="efectivo" @checked(old('medio_pago', 'efectivo') === 'efectivo')> Efectivo</label>
-                            <label><input type="radio" name="medio_pago" value="transferencia" @checked(old('medio_pago') === 'transferencia')> Transferencia</label>
-                        </div>
-                    </div>
-                    <div class="f2">
-                        <div class="field">
-                            <label for="{{ $form['nombre'] }}-fecha">Fecha</label>
-                            <input id="{{ $form['nombre'] }}-fecha" type="date" name="fecha" class="inp" max="{{ $hoy }}" value="{{ old('fecha', $hoy) }}" required>
-                        </div>
-                        <div class="field">
-                            <label for="{{ $form['nombre'] }}-nota">Nota (opcional)</label>
-                            <input id="{{ $form['nombre'] }}-nota" name="nota" class="inp" maxlength="255" value="{{ $errors->{$form['nombre']}->any() ? old('nota') : '' }}" placeholder="Ej. Consignación Bancolombia">
-                        </div>
-                    </div>
-                </div>
-                <div class="md-ft">
-                    <button type="button" class="btn" @click="$dispatch('close-modal', '{{ $form['nombre'] }}')">Cancelar</button>
-                    <button type="submit" class="btn pri">{{ $form['boton'] }}</button>
-                </div>
-            </form>
-        </x-modal>
-    @endforeach
+    <x-modal-pago-cartera :comprador="$comprador" tipo="abono" :ayuda="'Debe actualmente '.Formato::dinero($deuda).'. El abono no puede ser mayor.'" />
+    <x-modal-pago-cartera :comprador="$comprador" tipo="anticipo" ayuda='El dinero queda a favor del comprador y se descuenta cuando paga una remisión con "Anticipo".' />
 </x-app-layout>

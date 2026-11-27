@@ -79,7 +79,11 @@ class CarteraController extends Controller
             throw $e->errorBag('anticipo');
         }
 
-        return to_route('cartera.show', $comprador)->with('ok', 'Anticipo de '.Formato::dinero($datos['valor']).' registrado. Saldo a favor: '.Formato::dinero($comprador->saldoAnticipo()).'.');
+        $destino = $request->input('_volver') === 'compradores'
+            ? route('compradores.index', ['ver' => $comprador->id])
+            : route('cartera.show', $comprador);
+
+        return redirect($destino)->with('ok', 'Anticipo de '.Formato::dinero($datos['valor']).' registrado. Saldo a favor: '.Formato::dinero($comprador->saldoAnticipo()).'.');
     }
 
     public function exportarExcel(Request $request): BinaryFileResponse
