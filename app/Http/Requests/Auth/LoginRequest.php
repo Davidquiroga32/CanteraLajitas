@@ -7,6 +7,7 @@ use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -89,9 +90,14 @@ class LoginRequest extends FormRequest
             return;
         }
 
-        event(new Lockout($this));
+        $clave = $porEquipo ? $this->throttleKeyEquipo() : $this->throttleKey();
+        $seconds = RateLimiter::availableIn($clave);
 
-        $seconds = RateLimiter::availableIn($porEquipo ? $this->throttleKeyEquipo() : $this->throttleKey());
+        // El bloqueo se anota en la auditoría una sola vez mientras dura: si no,
+        // cada intento bloqueado escribiría otra fila y se podría llenar de ruido.
+        if (Cache::add('bloqueo-auditado|'.$clave, true, max(1, $seconds))) {
+            event(new Lockout($this));
+        }
 
         throw ValidationException::withMessages([
             'email' => trans('auth.throttle', [

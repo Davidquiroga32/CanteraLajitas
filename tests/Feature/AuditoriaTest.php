@@ -45,6 +45,27 @@ class AuditoriaTest extends TestCase
         $this->assertTrue(Auditoria::query()->where('accion', 'sesion.bloqueo')->exists());
     }
 
+    public function test_a_lockout_is_recorded_only_once_while_it_lasts(): void
+    {
+        $usuario = User::factory()->create();
+
+        for ($i = 0; $i < 15; $i++) {
+            $this->post(route('login'), ['email' => $usuario->email, 'password' => 'incorrecta']);
+        }
+
+        $this->assertSame(5, Auditoria::query()->where('accion', 'sesion.fallido')->count());
+        $this->assertSame(1, Auditoria::query()->where('accion', 'sesion.bloqueo')->count());
+    }
+
+    public function test_login_rejects_bursts_of_requests_from_one_device(): void
+    {
+        for ($i = 0; $i < 30; $i++) {
+            $this->post(route('login'), ['email' => "rafaga{$i}@canteralajitas.test", 'password' => 'x']);
+        }
+
+        $this->post(route('login'), ['email' => 'otra@canteralajitas.test', 'password' => 'x'])->assertTooManyRequests();
+    }
+
     public function test_records_downloads_with_filters_and_buyer(): void
     {
         $admin = User::factory()->admin()->create();

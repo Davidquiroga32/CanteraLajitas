@@ -2,7 +2,7 @@
 
 > Sistema de control de ventas de materiales por m³: **remisiones**, compradores, cartera (créditos y anticipos), inventario, equipo y reportes.
 > Stack: **PHP 8.5 + Laravel 13 + MySQL 8.4 + Blade/Breeze (Alpine.js) + Tailwind CSS**. Sin Livewire ni Inertia.
-> Despliegue objetivo: **VPS Hostinger** (Ubuntu + Nginx + PHP-FPM + MySQL + HTTPS con Let's Encrypt).
+> Despliegue objetivo: **VPS en Contabo** con el **dominio registrado en Hostinger** (Ubuntu + Nginx + PHP-FPM + MySQL + HTTPS con Let's Encrypt).
 
 Fuentes de este plan:
 - Boceto `C:\Proyectos\Bocetos San Jose\cantera-lajitas.html` (estructura, pantallas y componentes).
@@ -213,11 +213,11 @@ Otras reglas: abonos y anticipos se reciben solo en efectivo o transferencia.
 - Límite de intentos de login, cabeceras de seguridad, `fillable` correctos, autorización en todos los controladores.
 - Pruebas de features: permisos por rol, flujo completo de remisión, cartera, exportaciones. Workflow de GitHub Actions corriendo la suite en cada push.
 
-### Fase 9 — Despliegue en VPS Hostinger
+### Fase 9 — Despliegue en VPS Contabo (dominio en Hostinger)
 - Script `deploy/provision.sh` (una vez): Ubuntu, Nginx, PHP 8.5-FPM y extensiones, MySQL 8, Composer, Node, usuario de despliegue, firewall (UFW), Certbot.
 - Script `deploy/deploy.sh` (cada versión): `git pull`, `composer install --no-dev`, `npm ci && npm run build`, `migrate --force`, cachés, reinicio de PHP-FPM, modo mantenimiento durante el proceso.
 - Plantilla de sitio Nginx y `.env.production.example`.
-- DNS del dominio apuntando al VPS, HTTPS con Let's Encrypt y redirección.
+- DNS del dominio (en el panel de Hostinger) apuntando a la IP del VPS de Contabo, HTTPS con Let's Encrypt y redirección.
 - Cron del scheduler y **copias de seguridad diarias de la BD**.
 - **Cualquier comando en el servidor se confirma contigo antes de ejecutarse.**
 
